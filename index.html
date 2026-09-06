@@ -235,14 +235,25 @@ button:active{transform:scale(.97)}
   .answer-input{width:150px;font-size:1.5rem}
 }
 
-/* === SYNC === */
-.sync-card{
-  width:100%;background:var(--bg-raised);border:1px solid var(--border);
-  border-radius:10px;padding:16px 20px;display:flex;flex-direction:column;gap:12px;
+/* === AUTH === */
+.auth-input{
+  width:100%;padding:12px 16px;font-size:.95rem;
+  font-family:'IBM Plex Mono',monospace;
+  background:var(--input-bg);color:var(--text);
+  border:2px solid var(--input-border);border-radius:8px;
+  outline:none;transition:border-color .2s;
 }
-.sync-title{font-size:.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
-.sync-actions{display:flex;gap:8px}
-.sync-actions button{flex:1}
+.auth-input:focus{border-color:var(--accent)}
+.auth-toggle{
+  font-size:.8rem;color:var(--accent);background:none;
+  text-decoration:underline;text-underline-offset:2px;
+  padding:0;
+}
+.account-row{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  padding:12px 20px;background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:10px;
+}
 
 .toast{
   position:fixed;bottom:24px;left:50%;
@@ -254,33 +265,26 @@ button:active{transform:scale(.97)}
   pointer-events:none;
 }
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.5);
-  display:flex;align-items:center;justify-content:center;
-  z-index:50;padding:16px;
-}
-.modal-overlay[hidden]{display:none}
-.modal-box{
-  background:var(--bg-raised);border:1px solid var(--border);
-  border-radius:12px;padding:24px;width:100%;max-width:440px;
-  display:flex;flex-direction:column;gap:16px;
-}
-.modal-box h3{font-size:1.1rem;color:var(--accent)}
-.modal-box textarea{
-  width:100%;height:100px;padding:12px;
-  font-family:'IBM Plex Mono',monospace;font-size:.75rem;
-  background:var(--input-bg);color:var(--text);
-  border:2px solid var(--input-border);border-radius:8px;
-  resize:vertical;outline:none;
-}
-.modal-box textarea:focus{border-color:var(--accent)}
-.modal-actions{display:flex;gap:8px}
 </style>
 
 <div class="app">
+  <!-- AUTH -->
+  <div id="auth" class="screen active">
+    <h1 class="home-title">Neuro Calcul</h1>
+    <p class="home-subtitle">Entraînement adaptatif en calcul mental</p>
+    <div class="level-card" style="gap:16px">
+      <h3 id="auth-title" style="color:var(--accent);font-size:1.1rem;margin:0">Connexion</h3>
+      <input class="auth-input" id="auth-user" type="text" placeholder="Pseudo" autocomplete="username" spellcheck="false">
+      <input class="auth-input" id="auth-pass" type="password" placeholder="Mot de passe" autocomplete="current-password">
+      <div id="auth-error" style="font-size:.8rem;color:var(--err);min-height:1.2em">&nbsp;</div>
+      <button class="btn-primary" id="auth-submit" onclick="doAuth()">Se connecter</button>
+      <button class="auth-toggle" id="auth-toggle" onclick="toggleAuthMode()">Pas encore de compte ? Créer un compte</button>
+    </div>
+    <button class="reset-link" onclick="skipAuth()">Continuer sans compte</button>
+  </div>
+
   <!-- HOME -->
-  <div id="home" class="screen active">
+  <div id="home" class="screen">
     <h1 class="home-title">Neuro Calcul</h1>
     <p class="home-subtitle">Entraînement adaptatif en calcul mental</p>
     <div class="level-card">
@@ -302,13 +306,9 @@ button:active{transform:scale(.97)}
       <svg id="h-sparkline" viewBox="0 0 520 80" width="100%" height="80" style="display:block"></svg>
     </div>
     <button class="btn-primary" onclick="startTraining()">Commencer l'entraînement</button>
-    <div class="sync-card">
-      <div class="sync-title">Synchronisation <span id="sync-status" style="float:right;font-size:.65rem">…</span></div>
-      <div class="sync-actions">
-        <button class="btn-secondary" onclick="exportState()">Exporter</button>
-        <button class="btn-secondary" onclick="showImportModal()">Importer</button>
-        <button class="btn-secondary" id="link-btn" onclick="showLinkModal()" style="display:none">Lier un appareil</button>
-      </div>
+    <div class="account-row" id="account-bar">
+      <span id="account-info" style="font-size:.8rem;color:var(--text-2)"></span>
+      <button class="btn-secondary" id="account-btn" onclick="doLogout()" style="padding:6px 14px;font-size:.75rem">Déconnexion</button>
     </div>
     <button class="reset-link" onclick="resetProgress()">Réinitialiser ma progression</button>
   </div>
@@ -356,16 +356,6 @@ button:active{transform:scale(.97)}
   </div>
 </div>
 
-<div id="import-modal" class="modal-overlay" hidden onclick="if(event.target===this)closeImportModal()">
-  <div class="modal-box">
-    <h3>Importer une progression</h3>
-    <textarea id="import-input" placeholder="Colle ton code de synchronisation ici..."></textarea>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="doImport()">Importer</button>
-      <button class="btn-secondary" onclick="closeImportModal()">Annuler</button>
-    </div>
-  </div>
-</div>
 <div id="toast" class="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
@@ -700,49 +690,86 @@ function resetProgress(){
   renderHome();
 }
 
-// --- Sync ---
-function exportState(){
-  const data={
-    v:1,s:state.score,q:state.totalQ,o:state.totalOk,b:state.bestStreak,
-    h:state.sessions.slice(-30).map(s=>[s.count,s.correct,s.avgTimeMs,s.scoreBefore,s.scoreAfter])
-  };
-  const code=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(code).then(()=>showToast('Code copié !')).catch(()=>showExportFallback(code));
-  }else{
-    showExportFallback(code);
+// --- Auth ---
+let authMode='login';
+
+function toggleAuthMode(){
+  authMode=authMode==='login'?'register':'login';
+  document.getElementById('auth-title').textContent=authMode==='login'?'Connexion':'Créer un compte';
+  document.getElementById('auth-submit').textContent=authMode==='login'?'Se connecter':'Créer un compte';
+  document.getElementById('auth-toggle').textContent=authMode==='login'
+    ?'Pas encore de compte ? Créer un compte'
+    :'Déjà un compte ? Se connecter';
+  document.getElementById('auth-error').innerHTML='&nbsp;';
+}
+
+async function doAuth(){
+  const user=document.getElementById('auth-user').value.trim().toLowerCase();
+  const pass=document.getElementById('auth-pass').value;
+  const errEl=document.getElementById('auth-error');
+  if(!user||user.length<3){errEl.textContent='Pseudo : 3 caractères minimum';return}
+  if(!/^[a-z0-9_]+$/.test(user)){errEl.textContent='Lettres, chiffres et _ uniquement';return}
+  if(!pass||pass.length<6){errEl.textContent='Mot de passe : 6 caractères minimum';return}
+  const email=user+'@neurocalcul.app';
+  errEl.innerHTML='&nbsp;';
+  document.getElementById('auth-submit').disabled=true;
+  try{
+    if(authMode==='register'){
+      await firebase.auth().createUserWithEmailAndPassword(email,pass);
+    }else{
+      await firebase.auth().signInWithEmailAndPassword(email,pass);
+    }
+    try{localStorage.setItem('neuro-calcul-username',user)}catch{}
+  }catch(e){
+    let msg='Erreur inconnue';
+    switch(e.code){
+      case 'auth/email-already-in-use':msg='Ce pseudo est déjà pris';break;
+      case 'auth/user-not-found':
+      case 'auth/invalid-credential':msg='Pseudo ou mot de passe incorrect';break;
+      case 'auth/wrong-password':msg='Mot de passe incorrect';break;
+      case 'auth/weak-password':msg='Mot de passe trop faible';break;
+      case 'auth/too-many-requests':msg='Trop de tentatives, réessaie plus tard';break;
+      case 'auth/network-request-failed':msg='Pas de connexion internet';break;
+    }
+    errEl.textContent=msg;
+    document.getElementById('auth-submit').disabled=false;
   }
 }
-function showExportFallback(code){
-  document.getElementById('import-input').value=code;
-  document.getElementById('import-modal').hidden=false;
-  document.getElementById('import-input').select();
-  showToast('Copie le code ci-dessus');
+
+function skipAuth(){
+  try{localStorage.setItem('neuro-calcul-skip','1')}catch{}
+  showScreen('home');
+  updateAccountBar();
 }
-function showImportModal(){
-  document.getElementById('import-input').value='';
-  document.getElementById('import-modal').hidden=false;
-  document.getElementById('import-input').focus();
+
+function doLogout(){
+  if(typeof firebase!=='undefined'&&firebase.auth().currentUser){
+    firebase.auth().signOut();
+  }
+  cloudUid=null;
+  state=defaultState();
+  saveState(true);
+  try{localStorage.removeItem('neuro-calcul-username')}catch{}
+  updateAccountBar();
+  showScreen('auth');
 }
-function closeImportModal(){document.getElementById('import-modal').hidden=true}
-function doImport(){
-  const raw=document.getElementById('import-input').value.trim();
-  if(!raw)return;
-  try{
-    const d=JSON.parse(decodeURIComponent(escape(atob(raw))));
-    if(d.v!==1)throw 0;
-    state.score=d.s;
-    state.totalQ=d.q;
-    state.totalOk=d.o;
-    state.bestStreak=Math.max(state.bestStreak,d.b);
-    state.sessions=(d.h||[]).map(h=>({
-      date:new Date().toISOString(),count:h[0],correct:h[1],
-      avgTimeMs:h[2],scoreBefore:h[3],scoreAfter:h[4]
-    }));
-    saveState();renderHome();closeImportModal();
-    showToast('Progression importée !');
-  }catch{showToast('Code invalide')}
+
+function updateAccountBar(){
+  const info=document.getElementById('account-info');
+  const btn=document.getElementById('account-btn');
+  let username;
+  try{username=localStorage.getItem('neuro-calcul-username')}catch{}
+  if(cloudUid&&username){
+    info.textContent=username;
+    info.style.color='var(--ok)';
+    btn.style.display='';
+  }else{
+    info.textContent='Non connecté';
+    info.style.color='var(--text-2)';
+    btn.style.display='none';
+  }
 }
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.remove('show');
@@ -765,8 +792,7 @@ const firebaseConfig={
 
 function pushToCloud(){
   if(!db||!cloudUid)return;
-  const docId=getSyncDocId();
-  db.collection('users').doc(docId).set({
+  db.collection('users').doc(cloudUid).set({
     score:state.score,totalQ:state.totalQ,totalOk:state.totalOk,
     bestStreak:state.bestStreak,
     sessions:state.sessions.slice(-50),
@@ -774,113 +800,63 @@ function pushToCloud(){
   },{merge:true}).catch(()=>{});
 }
 
-function mergeCloudData(c){
-  if(c.totalQ>state.totalQ){
-    state.score=c.score;state.totalQ=c.totalQ;state.totalOk=c.totalOk;
-    state.bestStreak=Math.max(state.bestStreak,c.bestStreak||0);
-    state.sessions=c.sessions||[];
-    try{localStorage.setItem('neuro-calcul',JSON.stringify(state))}catch{}
-    renderHome();
-    return true;
-  }
-  return false;
+function loadCloudData(d){
+  state.score=d.score||500;
+  state.totalQ=d.totalQ||0;
+  state.totalOk=d.totalOk||0;
+  state.bestStreak=Math.max(state.bestStreak,d.bestStreak||0);
+  state.sessions=d.sessions||[];
+  try{localStorage.setItem('neuro-calcul',JSON.stringify(state))}catch{}
+  renderHome();
 }
 
-async function initCloud(){
-  if(typeof firebase==='undefined')return;
+function initCloud(){
+  if(typeof firebase==='undefined'){
+    showScreen('home');
+    return;
+  }
   try{
     firebase.initializeApp(firebaseConfig);
     db=firebase.firestore();
-    const cred=await firebase.auth().signInAnonymously();
-    cloudUid=cred.user.uid;
-    try{localStorage.setItem('neuro-calcul-uid',cloudUid)}catch{}
-
-    const docId=getSyncDocId();
-    const snap=await db.collection('users').doc(docId).get();
-    if(snap.exists){
-      if(!mergeCloudData(snap.data())&&state.totalQ>0) pushToCloud();
-    }else if(state.totalQ>0){
-      pushToCloud();
-    }
-
-    db.collection('users').doc(docId).onSnapshot(snap=>{
-      if(!snap.exists)return;
-      mergeCloudData(snap.data());
-    });
-
-    updateSyncStatus(true);
-  }catch(e){
-    console.warn('Cloud sync unavailable:',e);
-    updateSyncStatus(false);
+  }catch{
+    showScreen('home');
+    return;
   }
-}
-
-function updateSyncStatus(connected){
-  const el=document.getElementById('sync-status');
-  if(!el)return;
-  if(connected){
-    el.textContent='Cloud connecté';
-    el.style.color='var(--ok)';
-    const lb=document.getElementById('link-btn');
-    if(lb)lb.style.display='';
-  }else{
-    el.textContent='Hors ligne';
-    el.style.color='var(--text-2)';
-  }
-}
-
-function getSyncDocId(){
-  try{return localStorage.getItem('neuro-calcul-linked')||cloudUid}catch{return cloudUid}
-}
-
-function showLinkModal(){
-  const docId=getSyncDocId();
-  const code=btoa(docId).replace(/=+$/,'');
-  document.getElementById('import-input').value='';
-  document.getElementById('import-modal').hidden=false;
-  document.querySelector('#import-modal h3').textContent='Lier un appareil';
-  document.querySelector('#import-modal textarea').placeholder=
-    'Ton code de liaison :\n'+code+'\n\nOu colle le code d\'un autre appareil ici pour synchroniser.';
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(code).then(()=>showToast('Code copié !')).catch(()=>{});
-  }
-  document.querySelector('#import-modal .btn-primary').onclick=doLink;
-}
-
-function doLink(){
-  const raw=document.getElementById('import-input').value.trim();
-  if(!raw){closeImportModal();return}
-  try{
-    let padded=raw;
-    while(padded.length%4)padded+='=';
-    const linkedUid=atob(padded);
-    if(!linkedUid||linkedUid.length<10)throw 0;
-    try{localStorage.setItem('neuro-calcul-linked',linkedUid)}catch{}
-    if(db){
-      db.collection('users').doc(linkedUid).get().then(snap=>{
-        if(snap.exists) mergeCloudData(snap.data());
-        else pushToCloud();
-        db.collection('users').doc(linkedUid).onSnapshot(snap=>{
+  firebase.auth().onAuthStateChanged(async user=>{
+    if(user){
+      cloudUid=user.uid;
+      try{localStorage.setItem('neuro-calcul-username',user.email.replace('@neurocalcul.app',''))}catch{}
+      try{
+        const snap=await db.collection('users').doc(cloudUid).get();
+        if(snap.exists) loadCloudData(snap.data());
+        else if(state.totalQ>0) pushToCloud();
+        db.collection('users').doc(cloudUid).onSnapshot(snap=>{
           if(!snap.exists)return;
-          mergeCloudData(snap.data());
+          loadCloudData(snap.data());
         });
-      });
+      }catch(e){console.warn('Sync error:',e)}
+      updateAccountBar();
+      showScreen('home');
+      document.getElementById('auth-submit').disabled=false;
+    }else{
+      cloudUid=null;
+      updateAccountBar();
+      try{
+        if(localStorage.getItem('neuro-calcul-skip')) showScreen('home');
+      }catch{}
     }
-    closeImportModal();
-    showToast('Appareils liés !');
-  }catch{showToast('Code invalide')}
-  document.querySelector('#import-modal h3').textContent='Importer une progression';
-  document.querySelector('#import-modal textarea').placeholder='Colle ton code de synchronisation ici...';
-  document.querySelector('#import-modal .btn-primary').onclick=doImport;
+  });
 }
 
 // Input handling
 document.getElementById('t-input').addEventListener('keydown',e=>{
   if(e.key==='Enter')submitAnswer();
 });
+document.getElementById('auth-pass').addEventListener('keydown',e=>{
+  if(e.key==='Enter')doAuth();
+});
 
 // Init
-renderHome();
 initCloud();
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 </script>
