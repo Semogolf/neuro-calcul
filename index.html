@@ -308,7 +308,7 @@ button:active{transform:scale(.97)}
     <button class="btn-primary" onclick="startTraining()">Commencer l'entraînement</button>
     <div class="account-row" id="account-bar">
       <span id="account-info" style="font-size:.8rem;color:var(--text-2)"></span>
-      <button class="btn-secondary" id="account-btn" onclick="doLogout()" style="padding:6px 14px;font-size:.75rem">Déconnexion</button>
+      <button class="btn-secondary" id="account-btn" style="padding:6px 14px;font-size:.75rem">Déconnexion</button>
     </div>
     <button class="reset-link" onclick="resetProgress()">Réinitialiser ma progression</button>
   </div>
@@ -762,11 +762,15 @@ function updateAccountBar(){
   if(cloudUid&&username){
     info.textContent=username;
     info.style.color='var(--ok)';
+    btn.textContent='Déconnexion';
+    btn.onclick=doLogout;
     btn.style.display='';
   }else{
     info.textContent='Non connecté';
     info.style.color='var(--text-2)';
-    btn.style.display='none';
+    btn.textContent='Se connecter';
+    btn.onclick=function(){try{localStorage.removeItem('neuro-calcul-skip')}catch{};showScreen('auth')};
+    btn.style.display='';
   }
 }
 
@@ -811,8 +815,13 @@ function loadCloudData(d){
 }
 
 function initCloud(){
+  let skipped=false,cachedUser=null;
+  try{skipped=!!localStorage.getItem('neuro-calcul-skip');cachedUser=localStorage.getItem('neuro-calcul-username')}catch{}
+  if(skipped||cachedUser) showScreen('home');
+
   if(typeof firebase==='undefined'){
     showScreen('home');
+    updateAccountBar();
     return;
   }
   try{
@@ -820,6 +829,7 @@ function initCloud(){
     db=firebase.firestore();
   }catch{
     showScreen('home');
+    updateAccountBar();
     return;
   }
   firebase.auth().onAuthStateChanged(async user=>{
@@ -841,9 +851,7 @@ function initCloud(){
     }else{
       cloudUid=null;
       updateAccountBar();
-      try{
-        if(localStorage.getItem('neuro-calcul-skip')) showScreen('home');
-      }catch{}
+      if(!skipped&&!cachedUser) showScreen('auth');
     }
   });
 }
