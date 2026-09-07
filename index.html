@@ -28,57 +28,37 @@
   --input-border: #C8C0B4;
   --gauge-track: #E0DBD2;
   --gauge-fill: linear-gradient(90deg, #B87530, #D4983E);
+  --warn: #C89030;
 }
 @media(prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg: #181F2A;
-    --bg-raised: #1E2838;
-    --bg-surface: #222E3E;
-    --text: #D4CEC4;
-    --text-2: #8A8478;
-    --accent: #D4883A;
-    --accent-hover: #E09848;
-    --accent-subtle: #3A2E20;
-    --ok: #48A882;
-    --ok-subtle: #1A3028;
-    --err: #D46050;
-    --err-subtle: #3A1E1A;
-    --border: #2E3A4A;
-    --input-bg: #1A2535;
-    --input-border: #354558;
-    --gauge-track: #2A3644;
-    --gauge-fill: linear-gradient(90deg, #D4883A, #E8A84E);
+    --bg: #181F2A; --bg-raised: #1E2838; --bg-surface: #222E3E;
+    --text: #D4CEC4; --text-2: #8A8478;
+    --accent: #D4883A; --accent-hover: #E09848; --accent-subtle: #3A2E20;
+    --ok: #48A882; --ok-subtle: #1A3028;
+    --err: #D46050; --err-subtle: #3A1E1A;
+    --border: #2E3A4A; --input-bg: #1A2535; --input-border: #354558;
+    --gauge-track: #2A3644; --gauge-fill: linear-gradient(90deg, #D4883A, #E8A84E);
+    --warn: #D4A840;
   }
 }
 :root[data-theme="dark"]{
-  --bg: #181F2A;
-  --bg-raised: #1E2838;
-  --bg-surface: #222E3E;
-  --text: #D4CEC4;
-  --text-2: #8A8478;
-  --accent: #D4883A;
-  --accent-hover: #E09848;
-  --accent-subtle: #3A2E20;
-  --ok: #48A882;
-  --ok-subtle: #1A3028;
-  --err: #D46050;
-  --err-subtle: #3A1E1A;
-  --border: #2E3A4A;
-  --input-bg: #1A2535;
-  --input-border: #354558;
-  --gauge-track: #2A3644;
-  --gauge-fill: linear-gradient(90deg, #D4883A, #E8A84E);
+  --bg: #181F2A; --bg-raised: #1E2838; --bg-surface: #222E3E;
+  --text: #D4CEC4; --text-2: #8A8478;
+  --accent: #D4883A; --accent-hover: #E09848; --accent-subtle: #3A2E20;
+  --ok: #48A882; --ok-subtle: #1A3028;
+  --err: #D46050; --err-subtle: #3A1E1A;
+  --border: #2E3A4A; --input-bg: #1A2535; --input-border: #354558;
+  --gauge-track: #2A3644; --gauge-fill: linear-gradient(90deg, #D4883A, #E8A84E);
+  --warn: #D4A840;
 }
 
 *,*::before,*::after{box-sizing:border-box}
 body{
-  background:var(--bg);
-  color:var(--text);
+  background:var(--bg);color:var(--text);
   font-family:'IBM Plex Mono',monospace;
-  margin:0;padding:24px 16px;
-  min-height:100vh;
-  display:flex;justify-content:center;
-  transition:background .3s;
+  margin:0;padding:24px 16px;min-height:100vh;
+  display:flex;justify-content:center;transition:background .3s;
 }
 .app{width:100%;max-width:580px;margin:0 auto}
 h1,h2,h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;margin:0;font-weight:700}
@@ -92,7 +72,6 @@ button:active{transform:scale(.97)}
 .screen{display:none;flex-direction:column;align-items:center;gap:24px;width:100%}
 .screen.active{display:flex}
 
-/* === HOME === */
 .home-title{font-size:clamp(1.6rem,4vw,2rem);letter-spacing:-.02em;text-align:center;color:var(--accent)}
 .home-subtitle{font-size:.85rem;color:var(--text-2);text-align:center;margin-top:-12px}
 
@@ -107,15 +86,10 @@ button:active{transform:scale(.97)}
 .gauge-fill{height:100%;background:var(--gauge-fill);border-radius:3px;transition:width .6s cubic-bezier(.22,1,.36,1)}
 .gauge-label{display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-2)}
 .ops-row{display:flex;gap:8px;flex-wrap:wrap}
-.op-badge{
-  font-size:.8rem;padding:4px 12px;border-radius:6px;
-  background:var(--accent-subtle);color:var(--accent);font-weight:500;
-}
+.op-badge{font-size:.8rem;padding:4px 12px;border-radius:6px;background:var(--accent-subtle);color:var(--accent);font-weight:500}
 .op-badge.locked{background:var(--bg-surface);color:var(--text-2);opacity:.5}
 
-.stats-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;
-}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%}
 .stat-box{
   background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;
   padding:16px 12px;text-align:center;display:flex;flex-direction:column;gap:4px;
@@ -123,11 +97,33 @@ button:active{transform:scale(.97)}
 .stat-value{font-size:1.4rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
 .stat-label{font-size:.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
 
+.daily-row{
+  width:100%;display:flex;align-items:center;gap:12px;
+  padding:12px 16px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;
+}
+.daily-info{flex:1;display:flex;flex-direction:column;gap:6px}
+.daily-label{font-size:.7rem;color:var(--text-2)}
+.daily-bar{width:100%;height:5px;background:var(--gauge-track);border-radius:3px;overflow:hidden}
+.daily-bar-fill{height:100%;background:var(--ok);border-radius:3px;transition:width .4s}
+.streak-pill{
+  font-size:.75rem;padding:4px 10px;border-radius:10px;white-space:nowrap;
+  background:var(--accent-subtle);color:var(--accent);font-weight:600;
+}
+
 .sparkline-card{
   width:100%;background:var(--bg-raised);border:1px solid var(--border);
   border-radius:10px;padding:16px 20px;
 }
 .sparkline-title{font-size:.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.mode-card{
+  background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;
+  padding:16px 12px;text-align:center;display:flex;flex-direction:column;gap:4px;
+}
+.mode-card:hover{background:var(--bg-surface)}
+.mode-name{font-size:.85rem;font-weight:700;color:var(--text)}
+.mode-desc{font-size:.65rem;color:var(--text-2);line-height:1.3}
 
 .btn-primary{
   width:100%;padding:16px 24px;font-size:1.05rem;
@@ -140,7 +136,7 @@ button:active{transform:scale(.97)}
 }
 .btn-secondary:hover{background:var(--border)}
 
-/* === TRAINING === */
+/* TRAINING */
 .training-bar{
   width:100%;display:flex;justify-content:space-between;align-items:center;
   padding:0 4px;font-size:.75rem;color:var(--text-2);
@@ -152,16 +148,22 @@ button:active{transform:scale(.97)}
 .streak-badge{
   display:flex;align-items:center;gap:4px;
   padding:3px 10px;border-radius:12px;font-weight:500;font-size:.8rem;
-  background:var(--accent-subtle);color:var(--accent);
-  transition:transform .2s;
+  background:var(--accent-subtle);color:var(--accent);transition:transform .2s;
 }
 .streak-badge.pop{animation:pop .3s}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
 
+.chrono-display{
+  font-family:'Bricolage Grotesque',system-ui,sans-serif;
+  font-size:2.2rem;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;text-align:center;
+}
+.chrono-display.urgent{color:var(--err)}
+
 .problem-area{
   width:100%;min-height:200px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:20px;
-  padding:40px 20px;margin:8px 0;
+  align-items:center;justify-content:center;gap:16px;
+  padding:32px 20px;margin:8px 0;
   background:var(--bg-raised);border:2px solid var(--border);border-radius:16px;
   transition:border-color .3s,background .3s;
 }
@@ -170,8 +172,7 @@ button:active{transform:scale(.97)}
 
 .problem-text{
   font-size:clamp(2rem,7vw,3.2rem);font-weight:600;letter-spacing:.02em;
-  font-variant-numeric:tabular-nums;text-align:center;
-  transition:opacity .2s;line-height:1.2;
+  font-variant-numeric:tabular-nums;text-align:center;transition:opacity .2s;line-height:1.2;
 }
 .problem-op{color:var(--accent);margin:0 .15em}
 
@@ -180,26 +181,31 @@ button:active{transform:scale(.97)}
   font-family:'IBM Plex Mono',monospace;font-weight:500;
   background:var(--input-bg);color:var(--text);
   border:2px solid var(--input-border);border-radius:10px;
-  outline:none;font-variant-numeric:tabular-nums;
-  transition:border-color .2s;
+  outline:none;font-variant-numeric:tabular-nums;transition:border-color .2s;
 }
 .answer-input:focus{border-color:var(--accent)}
 .answer-input:disabled{opacity:.6}
 
-.feedback-text{
-  font-size:.9rem;font-weight:500;min-height:1.3em;
-  transition:opacity .2s;
-}
+.feedback-text{font-size:.9rem;font-weight:500;min-height:1.3em;transition:opacity .2s}
 .feedback-text.ok{color:var(--ok)}
 .feedback-text.err{color:var(--err)}
+
+.hint-text{font-size:.75rem;color:var(--text-2);text-align:center;line-height:1.5;min-height:1em}
+
+.timer-bar{width:100%;height:4px;background:var(--gauge-track);border-radius:2px;overflow:hidden;margin-top:-4px}
+.timer-bar-fill{height:100%;border-radius:2px;transition:width .15s linear;background:var(--ok)}
+.timer-bar-fill.warn{background:var(--warn)}
+.timer-bar-fill.danger{background:var(--err)}
+.timer-bar-fill.over{background:var(--err);opacity:.4}
 
 .training-footer{
   width:100%;display:flex;justify-content:space-between;align-items:center;
   font-size:.75rem;color:var(--text-2);
 }
 .timer{font-variant-numeric:tabular-nums}
+.time-target{font-size:.65rem;color:var(--text-2);opacity:.6}
 
-/* === RECAP === */
+/* RECAP */
 .recap-title{font-size:1.6rem;text-align:center;color:var(--accent)}
 .recap-card{
   width:100%;background:var(--bg-raised);border:1px solid var(--border);
@@ -212,59 +218,90 @@ button:active{transform:scale(.97)}
 .recap-delta.up{background:var(--ok-subtle);color:var(--ok)}
 .recap-delta.down{background:var(--err-subtle);color:var(--err)}
 .recap-delta.flat{background:var(--bg-surface);color:var(--text-2)}
-
 .recap-divider{height:1px;background:var(--border);margin:4px 0}
-
 .recap-actions{display:flex;gap:12px;width:100%}
 .recap-actions .btn-primary{flex:1}
 .recap-actions .btn-secondary{flex:0 0 auto}
 
-/* === RESET === */
+.lb-list{width:100%;display:flex;flex-direction:column;gap:4px}
+.lb-row{
+  display:flex;align-items:center;gap:12px;padding:8px 12px;
+  border-radius:8px;font-size:.8rem;
+}
+.lb-row.me{background:var(--accent-subtle)}
+.lb-rank{width:24px;font-weight:700;color:var(--accent);text-align:center}
+.lb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* TABLES SELECT */
+.tables-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%}
+.table-btn{
+  padding:14px 8px;font-size:.95rem;font-weight:600;border-radius:8px;
+  background:var(--bg-raised);border:2px solid var(--border);color:var(--text);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.table-btn .table-acc{font-size:.6rem;font-weight:400;color:var(--text-2)}
+.table-btn.selected{border-color:var(--accent);background:var(--accent-subtle);color:var(--accent)}
+
+/* STATS */
+.op-stat-card{
+  display:flex;align-items:center;gap:12px;padding:10px 0;
+}
+.op-stat-card+.op-stat-card{border-top:1px solid var(--border)}
+.op-stat-sym{font-size:1.2rem;font-weight:700;color:var(--accent);width:28px;text-align:center}
+.op-stat-info{flex:1;display:flex;flex-direction:column;gap:4px}
+.op-stat-bar{height:6px;background:var(--gauge-track);border-radius:3px;overflow:hidden}
+.op-stat-fill{height:100%;border-radius:3px;background:var(--ok)}
+.op-stat-details{display:flex;gap:12px;font-size:.7rem;color:var(--text-2)}
+.op-stat-pct{font-weight:600;color:var(--text)}
+
+.weekly-card{
+  width:100%;background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:12px;padding:20px 24px;
+}
+.weekly-title{font-size:.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.weekly-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.weekly-item{display:flex;flex-direction:column;gap:2px}
+.weekly-val{font-size:1.1rem;font-weight:600;font-variant-numeric:tabular-nums}
+.weekly-lbl{font-size:.65rem;color:var(--text-2)}
+
+/* RESET / AUTH / TOAST */
 .reset-link{
   font-size:.7rem;color:var(--text-2);background:none;
-  text-decoration:underline;text-underline-offset:2px;
-  opacity:.6;margin-top:8px;
+  text-decoration:underline;text-underline-offset:2px;opacity:.6;margin-top:8px;
 }
 .reset-link:hover{opacity:1}
 
-@media(max-width:480px){
-  .stats-grid{grid-template-columns:repeat(3,1fr);gap:8px}
-  .stat-box{padding:12px 8px}
-  .stat-value{font-size:1.1rem}
-  .problem-area{padding:28px 16px;min-height:170px}
-  .answer-input{width:150px;font-size:1.5rem}
-}
-
-/* === AUTH === */
 .auth-input{
   width:100%;padding:12px 16px;font-size:.95rem;
   font-family:'IBM Plex Mono',monospace;
   background:var(--input-bg);color:var(--text);
-  border:2px solid var(--input-border);border-radius:8px;
-  outline:none;transition:border-color .2s;
+  border:2px solid var(--input-border);border-radius:8px;outline:none;transition:border-color .2s;
 }
 .auth-input:focus{border-color:var(--accent)}
-.auth-toggle{
-  font-size:.8rem;color:var(--accent);background:none;
-  text-decoration:underline;text-underline-offset:2px;
-  padding:0;
-}
+.auth-toggle{font-size:.8rem;color:var(--accent);background:none;text-decoration:underline;text-underline-offset:2px;padding:0}
 .account-row{
   width:100%;display:flex;justify-content:space-between;align-items:center;
-  padding:12px 20px;background:var(--bg-raised);border:1px solid var(--border);
-  border-radius:10px;
+  padding:12px 20px;background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;
 }
-
 .toast{
   position:fixed;bottom:24px;left:50%;
   transform:translateX(-50%) translateY(80px);
   background:var(--bg-raised);border:1px solid var(--border);
   color:var(--text);padding:10px 20px;border-radius:8px;
   font-size:.85rem;font-family:'IBM Plex Mono',monospace;
-  opacity:0;transition:transform .3s,opacity .3s;z-index:100;
-  pointer-events:none;
+  opacity:0;transition:transform .3s,opacity .3s;z-index:100;pointer-events:none;
 }
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+@media(max-width:480px){
+  .stats-grid{gap:8px}
+  .stat-box{padding:12px 8px}
+  .stat-value{font-size:1.1rem}
+  .problem-area{padding:24px 16px;min-height:170px}
+  .answer-input{width:150px;font-size:1.5rem}
+  .tables-grid{grid-template-columns:repeat(3,1fr)}
+}
 </style>
 
 <div class="app">
@@ -278,7 +315,7 @@ button:active{transform:scale(.97)}
       <input class="auth-input" id="auth-pass" type="password" placeholder="Mot de passe" autocomplete="current-password">
       <div id="auth-error" style="font-size:.8rem;color:var(--err);min-height:1.2em">&nbsp;</div>
       <button class="btn-primary" id="auth-submit" onclick="doAuth()">Se connecter</button>
-      <button class="auth-toggle" id="auth-toggle" onclick="toggleAuthMode()">Pas encore de compte ? Créer un compte</button>
+      <button class="auth-toggle" id="auth-toggle" onclick="toggleAuthMode()">Pas encore de compte ? Cr&eacute;er un compte</button>
     </div>
     <button class="reset-link" onclick="skipAuth()">Continuer sans compte</button>
   </div>
@@ -298,23 +335,60 @@ button:active{transform:scale(.97)}
     </div>
     <div class="stats-grid">
       <div class="stat-box"><span class="stat-value" id="h-total">0</span><span class="stat-label">Questions</span></div>
-      <div class="stat-box"><span class="stat-value" id="h-acc">—</span><span class="stat-label">Précision</span></div>
-      <div class="stat-box"><span class="stat-value" id="h-best">0</span><span class="stat-label">Série max</span></div>
+      <div class="stat-box"><span class="stat-value" id="h-acc">&mdash;</span><span class="stat-label">Pr&eacute;cision</span></div>
+      <div class="stat-box"><span class="stat-value" id="h-best">0</span><span class="stat-label">S&eacute;rie max</span></div>
+    </div>
+    <div class="daily-row" id="daily-row">
+      <div class="daily-info">
+        <div class="daily-label"><span id="daily-text">0 / 20 aujourd'hui</span></div>
+        <div class="daily-bar"><div class="daily-bar-fill" id="daily-fill" style="width:0%"></div></div>
+      </div>
+      <span class="streak-pill" id="streak-pill">0 j.</span>
     </div>
     <div class="sparkline-card" id="h-sparkline-card" hidden>
       <div class="sparkline-title">Progression</div>
       <svg id="h-sparkline" viewBox="0 0 520 80" width="100%" height="80" style="display:block"></svg>
     </div>
-    <button class="btn-primary" onclick="startTraining()">Commencer l'entraînement</button>
+    <div class="mode-grid">
+      <button class="mode-card" onclick="startTraining('standard')">
+        <span class="mode-name">Standard</span>
+        <span class="mode-desc">Progression adaptative</span>
+      </button>
+      <button class="mode-card" onclick="showScreen('tables-select')">
+        <span class="mode-name">Tables</span>
+        <span class="mode-desc">Multiplication cibl&eacute;e</span>
+      </button>
+      <button class="mode-card" onclick="startTraining('chrono')">
+        <span class="mode-name">Chrono 60s</span>
+        <span class="mode-desc" id="chrono-best-label">Record : --</span>
+      </button>
+      <button class="mode-card" onclick="startTraining('daily')">
+        <span class="mode-name">D&eacute;fi du jour</span>
+        <span class="mode-desc" id="daily-status-label">10 questions</span>
+      </button>
+    </div>
     <div class="account-row" id="account-bar">
       <span id="account-info" style="font-size:.8rem;color:var(--text-2)"></span>
-      <button class="btn-secondary" id="account-btn" style="padding:6px 14px;font-size:.75rem">Déconnexion</button>
+      <button class="btn-secondary" id="account-btn" style="padding:6px 14px;font-size:.75rem">D&eacute;connexion</button>
     </div>
-    <button class="reset-link" onclick="resetProgress()">Réinitialiser ma progression</button>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+      <button class="reset-link" onclick="showScreen('stats')">Statistiques</button>
+      <button class="reset-link" onclick="resetProgress()">R&eacute;initialiser</button>
+    </div>
+  </div>
+
+  <!-- TABLES SELECT -->
+  <div id="tables-select" class="screen">
+    <h2 class="recap-title">Tables de multiplication</h2>
+    <p style="font-size:.8rem;color:var(--text-2);text-align:center;margin-top:-12px">S&eacute;lectionne les tables &agrave; travailler</p>
+    <div class="tables-grid" id="tables-grid"></div>
+    <button class="btn-primary" id="tables-start-btn" onclick="startTablesTraining()">C'est parti !</button>
+    <button class="btn-secondary" onclick="showScreen('home')">Retour</button>
   </div>
 
   <!-- TRAINING -->
   <div id="training" class="screen">
+    <div id="chrono-bar" class="chrono-display" hidden>60.0</div>
     <div class="training-bar">
       <div class="training-level">
         <span>Niv.</span>
@@ -327,7 +401,9 @@ button:active{transform:scale(.97)}
       <div class="problem-text" id="t-problem"></div>
       <input class="answer-input" id="t-input" type="text" inputmode="numeric" autocomplete="off" placeholder="?">
       <div class="feedback-text" id="t-feedback">&nbsp;</div>
+      <div class="hint-text" id="t-hint"></div>
     </div>
+    <div class="timer-bar"><div class="timer-bar-fill" id="t-timer-bar" style="width:100%"></div></div>
     <div class="training-footer">
       <span class="timer" id="t-timer">0.0s</span>
       <span id="t-count">0 / 0</span>
@@ -337,22 +413,46 @@ button:active{transform:scale(.97)}
 
   <!-- RECAP -->
   <div id="recap" class="screen">
-    <h2 class="recap-title">Session terminée</h2>
+    <h2 class="recap-title" id="recap-title">Session termin&eacute;e</h2>
     <div class="recap-card">
       <div class="recap-row"><span class="recap-label">Questions</span><span class="recap-value" id="r-count">0</span></div>
-      <div class="recap-row"><span class="recap-label">Bonnes réponses</span><span class="recap-value" id="r-correct">0</span></div>
-      <div class="recap-row"><span class="recap-label">Précision</span><span class="recap-value" id="r-acc">0%</span></div>
+      <div class="recap-row"><span class="recap-label">Bonnes r&eacute;ponses</span><span class="recap-value" id="r-correct">0</span></div>
+      <div class="recap-row"><span class="recap-label">Pr&eacute;cision</span><span class="recap-value" id="r-acc">0%</span></div>
       <div class="recap-divider"></div>
       <div class="recap-row"><span class="recap-label">Temps moyen</span><span class="recap-value" id="r-time">0s</span></div>
-      <div class="recap-row"><span class="recap-label">Meilleure série</span><span class="recap-value" id="r-streak">0</span></div>
+      <div class="recap-row"><span class="recap-label">Meilleure s&eacute;rie</span><span class="recap-value" id="r-streak">0</span></div>
       <div class="recap-divider"></div>
       <div class="recap-row"><span class="recap-label">Score</span><span class="recap-delta" id="r-delta">+0</span></div>
       <div class="recap-row"><span class="recap-label">Niveau</span><span class="recap-value" id="r-level">5</span></div>
     </div>
+    <div id="recap-lb" hidden>
+      <h3 style="font-size:.9rem;color:var(--accent);text-align:center">Classement du jour</h3>
+      <div class="lb-list" id="lb-list"></div>
+    </div>
     <div class="recap-actions">
-      <button class="btn-primary" onclick="startTraining()">Encore !</button>
+      <button class="btn-primary" id="recap-again-btn" onclick="startTraining('standard')">Encore !</button>
       <button class="btn-secondary" onclick="showScreen('home')">Accueil</button>
     </div>
+  </div>
+
+  <!-- STATS -->
+  <div id="stats" class="screen">
+    <h2 class="recap-title">Statistiques</h2>
+    <div class="weekly-card">
+      <div class="weekly-title">Cette semaine</div>
+      <div class="weekly-grid" id="weekly-grid">
+        <div class="weekly-item"><span class="weekly-val" id="w-sessions">0</span><span class="weekly-lbl">Sessions</span></div>
+        <div class="weekly-item"><span class="weekly-val" id="w-questions">0</span><span class="weekly-lbl">Questions</span></div>
+        <div class="weekly-item"><span class="weekly-val" id="w-accuracy">--</span><span class="weekly-lbl">Pr&eacute;cision</span></div>
+        <div class="weekly-item"><span class="weekly-val" id="w-level">--</span><span class="weekly-lbl">Niveaux gagn&eacute;s</span></div>
+      </div>
+    </div>
+    <div class="recap-card" id="stats-ops"></div>
+    <div class="sparkline-card">
+      <div class="sparkline-title">&Eacute;volution sur 30 jours</div>
+      <svg id="stats-graph" viewBox="0 0 520 120" width="100%" height="120" style="display:block"></svg>
+    </div>
+    <button class="btn-secondary" onclick="showScreen('home')">Retour</button>
   </div>
 </div>
 
@@ -362,25 +462,44 @@ button:active{transform:scale(.97)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
 <script>
-const RANKS = [
+const RANKS=[
   [1,'Débutant'],[4,'Apprenti'],[7,'Praticien'],[10,'Expert'],
   [13,'Maître'],[16,'Grand Maître'],[19,'Prodige']
 ];
-const OPS_UNLOCK = {'+':100,'-':100,'×':350,'÷':500};
-const K = 32;
+const OPS_UNLOCK={'+':100,'-':100,'×':350,'÷':500};
+const K=32;
+const DAILY_TARGET=20;
 
-function rank(level){
-  let r='Débutant';
-  for(const[l,n]of RANKS) if(level>=l) r=n;
-  return r;
-}
+function rank(level){let r='Débutant';for(const[l,n]of RANKS)if(level>=l)r=n;return r}
 function levelOf(score){return Math.max(1,Math.min(20,Math.floor(score/100)))}
 function progressOf(score){return(score%100)/100}
+function today(){return new Date().toISOString().slice(0,10)}
 
 // --- State ---
 let state;
 function defaultState(){
-  return{score:500,totalQ:0,totalOk:0,bestStreak:0,sessions:[]}
+  return{
+    score:500,totalQ:0,totalOk:0,bestStreak:0,sessions:[],
+    opStats:{'+': {q:0,ok:0,ms:0},'-': {q:0,ok:0,ms:0},'×': {q:0,ok:0,ms:0},'÷': {q:0,ok:0,ms:0}},
+    multFacts:{},
+    dailyStreak:0,lastDay:null,todayQ:0,
+    dailyDone:null,dailyBestScore:0,
+    chronoBest:0
+  }
+}
+function migrateState(p){
+  if(!p.opStats)p.opStats={'+': {q:0,ok:0,ms:0},'-': {q:0,ok:0,ms:0},'×': {q:0,ok:0,ms:0},'÷': {q:0,ok:0,ms:0}};
+  if(!p.multFacts)p.multFacts={};
+  if(!p.dailyStreak)p.dailyStreak=0;
+  if(!p.lastDay)p.lastDay=null;
+  if(!p.todayQ)p.todayQ=0;
+  if(!p.dailyDone)p.dailyDone=null;
+  if(!p.dailyBestScore)p.dailyBestScore=0;
+  if(!p.chronoBest)p.chronoBest=0;
+  for(const op of ['+','-','×','÷']){
+    if(!p.opStats[op])p.opStats[op]={q:0,ok:0,ms:0};
+  }
+  return p;
 }
 function loadState(){
   try{
@@ -388,7 +507,7 @@ function loadState(){
     if(!d)return null;
     const p=JSON.parse(d);
     if(typeof p.score!=='number')return null;
-    return p;
+    return migrateState(p);
   }catch{return null}
 }
 function saveState(skipCloud){
@@ -397,24 +516,50 @@ function saveState(skipCloud){
 }
 state=loadState()||defaultState();
 
-// --- Session state (not persisted) ---
-let session=null;
-let currentQ=null;
-let timerInterval=null;
-let questionStart=0;
-let feedbackTimeout=null;
+function checkNewDay(){
+  const t=today();
+  if(state.lastDay===t)return;
+  if(state.lastDay){
+    const prev=new Date(state.lastDay+'T00:00:00');
+    const now=new Date(t+'T00:00:00');
+    const diff=Math.round((now-prev)/86400000);
+    if(diff===1&&state.todayQ>=DAILY_TARGET) state.dailyStreak++;
+    else if(diff===1) state.dailyStreak=0;
+    else state.dailyStreak=0;
+  }
+  state.todayQ=0;
+  state.lastDay=t;
+}
+checkNewDay();
+
+// --- Session ---
+let session=null,currentQ=null,timerInterval=null,questionStart=0,feedbackTimeout=null;
+let chronoInterval=null,chronoEnd=0;
+
+// --- Seeded RNG for daily ---
+function seededRNG(seed){
+  let s=seed|0;
+  return function(){s=(s*1664525+1013904223)|0;return(s>>>0)/4294967296};
+}
 
 // --- Question Generation ---
 function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1))}
 function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
 
-function generateQuestion(score){
-  const ops=['+','-'];
-  if(score>=350)ops.push('×');
-  if(score>=500)ops.push('÷');
-  const op=pick(ops);
-  let a,b,answer,expr,diff;
+function weightedPick(ops){
+  const weights=ops.map(o=>{
+    const st=state.opStats[o];
+    if(!st||st.q<5)return 1;
+    return 1+(1-st.ok/st.q)*2;
+  });
+  const total=weights.reduce((s,w)=>s+w,0);
+  let r=Math.random()*total;
+  for(let i=0;i<ops.length;i++){r-=weights[i];if(r<=0)return ops[i]}
+  return ops[ops.length-1];
+}
 
+function genNumbers(op,score){
+  let a,b,answer;
   switch(op){
     case '+':
       if(score<200){a=randInt(1,9);b=randInt(1,9)}
@@ -423,10 +568,7 @@ function generateQuestion(score){
       else if(score<1000){a=randInt(100,500);b=randInt(50,500)}
       else if(score<1400){a=randInt(100,999);b=randInt(100,999)}
       else{a=randInt(500,9999);b=randInt(500,9999)}
-      answer=a+b;
-      expr=`${a} <span class="problem-op">+</span> ${b}`;
-      diff=a+b;
-      break;
+      answer=a+b;break;
     case '-':
       if(score<200){a=randInt(2,9);b=randInt(1,a)}
       else if(score<400){a=randInt(20,60);b=randInt(5,a)}
@@ -434,48 +576,102 @@ function generateQuestion(score){
       else if(score<1000){a=randInt(100,500);b=randInt(50,a)}
       else if(score<1400){a=randInt(100,999);b=randInt(50,a)}
       else{a=randInt(1000,9999);b=randInt(100,a)}
-      answer=a-b;
-      expr=`${a} <span class="problem-op">−</span> ${b}`;
-      diff=a;
-      break;
+      answer=a-b;break;
     case '×':
       if(score<500){a=randInt(2,5);b=randInt(2,9)}
       else if(score<700){a=randInt(2,12);b=randInt(2,12)}
       else if(score<1000){a=randInt(3,12);b=randInt(10,30)}
       else if(score<1300){a=randInt(10,50);b=randInt(10,50)}
       else{a=randInt(10,99);b=randInt(10,99)}
-      answer=a*b;
-      expr=`${a} <span class="problem-op">×</span> ${b}`;
-      diff=a*b;
-      break;
+      answer=a*b;break;
     case '÷':
       if(score<700){b=randInt(2,9);answer=randInt(2,12);a=b*answer}
       else if(score<1000){b=randInt(2,12);answer=randInt(5,30);a=b*answer}
       else if(score<1300){b=randInt(3,20);answer=randInt(10,50);a=b*answer}
       else{b=randInt(5,50);answer=randInt(10,99);a=b*answer}
-      expr=`${a} <span class="problem-op">÷</span> ${b}`;
-      diff=a;
       break;
   }
+  return{a,b,answer};
+}
 
-  const questionDiff=Math.log2(Math.max(diff,2))*100;
-  const targetTime=1500+questionDiff*8;
-  return{expr,answer,questionDiff,targetTime}
+function genSeeded(rng){
+  const ops=['+','-','×','÷'];
+  const op=ops[Math.floor(rng()*ops.length)];
+  const score=800;
+  let a,b,answer;
+  const r=()=>Math.floor(rng()*1000);
+  switch(op){
+    case '+':a=10+r()%90;b=10+r()%90;answer=a+b;break;
+    case '-':a=30+r()%70;b=10+r()%a;answer=a-b;break;
+    case '×':a=2+r()%11;b=2+r()%11;answer=a*b;break;
+    case '÷':b=2+r()%10;answer=2+r()%11;a=b*answer;break;
+  }
+  return{op,a,b,answer};
+}
+
+const OP_DISPLAY={'+':'+','-':'−','×':'×','÷':'÷'};
+
+function makeQuestion(op,a,b,answer){
+  const expr=`${a} <span class="problem-op">${OP_DISPLAY[op]}</span> ${b}`;
+  const diff=Math.log2(Math.max(op==='÷'?a:op==='-'?a:(a*(op==='×'?b:1)+(op==='+'?b:0)),2))*100;
+  const targetTime=1500+diff*8;
+  return{op,a,b,expr,answer,questionDiff:diff,targetTime};
+}
+
+function generateQuestion(score,mode,tableNums){
+  if(mode==='tables'){
+    const t=pick(tableNums||[2]);
+    const b=randInt(2,12);
+    return makeQuestion('×',t,b,t*b);
+  }
+  const ops=['+','-'];
+  if(score>=350)ops.push('×');
+  if(score>=500)ops.push('÷');
+  const op=weightedPick(ops);
+  const{a,b,answer}=genNumbers(op,score);
+  return makeQuestion(op,a,b,answer);
 }
 
 function calcScoreChange(correct,timeMs,qDiff,playerScore){
   const expected=1/(1+Math.pow(10,(qDiff-playerScore)/400));
-  let timeMul=1;
   const target=1500+qDiff*8;
   if(correct){
-    if(timeMs<target*.5)timeMul=1.3;
+    let timeMul;
+    if(timeMs<target*.5)timeMul=1.4;
     else if(timeMs<target)timeMul=1;
-    else if(timeMs<target*2)timeMul=.8;
-    else timeMul=.6;
+    else if(timeMs<target*1.5)timeMul=.6;
+    else if(timeMs<target*2.5)timeMul=.25;
+    else timeMul=0;
     return Math.round(K*(1-expected)*timeMul);
-  }else{
-    return Math.round(K*(0-expected));
   }
+  return Math.round(K*(0-expected));
+}
+
+// --- Hints ---
+function getHint(op,a,b,answer){
+  if(a<20&&b<20&&op!=='÷')return null;
+  switch(op){
+    case '+':{
+      const t1=Math.floor(a/10)*10,t2=Math.floor(b/10)*10;
+      const u=a%10+b%10;
+      return `${t1}+${t2} = ${t1+t2}, puis +${u} → ${answer}`;
+    }
+    case '-':{
+      const step=Math.floor(b/10)*10;
+      if(step===0)return null;
+      const rest=b%10;
+      return `${a}−${step} = ${a-step}${rest>0?`, −${rest} = ${answer}`:''}`;
+    }
+    case '×':{
+      if(a<=12&&b<=12)return null;
+      const big=Math.max(a,b),small=Math.min(a,b);
+      const tens=Math.floor(big/10)*10,units=big%10;
+      if(units===0)return null;
+      return `${small}×${tens} = ${small*tens}, ${small}×${units} = ${small*units} → ${answer}`;
+    }
+    case '÷':return `${b} × ${answer} = ${a}`;
+  }
+  return null;
 }
 
 // --- UI ---
@@ -483,11 +679,12 @@ function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(name).classList.add('active');
   if(name==='home')renderHome();
+  if(name==='stats')renderStats();
+  if(name==='tables-select')renderTablesSelect();
 }
 
 function renderHome(){
-  const lv=levelOf(state.score);
-  const pr=progressOf(state.score);
+  const lv=levelOf(state.score),pr=progressOf(state.score);
   document.getElementById('h-level').textContent=lv;
   document.getElementById('h-rank').textContent=rank(lv);
   document.getElementById('h-gauge').style.width=(pr*100)+'%';
@@ -497,7 +694,6 @@ function renderHome(){
   document.getElementById('h-acc').textContent=state.totalQ>0?Math.round(state.totalOk/state.totalQ*100)+'%':'—';
   document.getElementById('h-best').textContent=state.bestStreak;
 
-  // Ops badges
   const opsEl=document.getElementById('h-ops');
   opsEl.innerHTML='';
   for(const[op,req]of Object.entries(OPS_UNLOCK)){
@@ -507,25 +703,29 @@ function renderHome(){
     opsEl.appendChild(b);
   }
 
-  // Sparkline
+  checkNewDay();
+  const pct=Math.min(100,Math.round(state.todayQ/DAILY_TARGET*100));
+  document.getElementById('daily-text').textContent=`${state.todayQ} / ${DAILY_TARGET} aujourd'hui`;
+  document.getElementById('daily-fill').style.width=pct+'%';
+  document.getElementById('streak-pill').textContent=state.dailyStreak+' j.';
+
+  document.getElementById('chrono-best-label').textContent=state.chronoBest>0?'Record : '+state.chronoBest:'Record : --';
+  const dd=state.dailyDone===today();
+  document.getElementById('daily-status-label').textContent=dd?'Fait !':'10 questions';
+
   const card=document.getElementById('h-sparkline-card');
-  if(state.sessions.length>=2){
-    card.hidden=false;
-    drawSparkline();
-  }else{
-    card.hidden=true;
-  }
+  if(state.sessions.length>=2){card.hidden=false;drawSparkline('h-sparkline',state.sessions.slice(-30))}
+  else card.hidden=true;
 }
 
-function drawSparkline(){
-  const svg=document.getElementById('h-sparkline');
-  const pts=state.sessions.slice(-30);
+function drawSparkline(svgId,pts){
+  const svg=document.getElementById(svgId);
   if(pts.length<2){svg.innerHTML='';return}
   const scores=pts.map(s=>s.scoreAfter);
-  const min=Math.min(...scores)-30;
-  const max=Math.max(...scores)+30;
+  const min=Math.min(...scores)-30,max=Math.max(...scores)+30;
   const range=max-min||1;
-  const w=520,h=80,px=16,py=8;
+  const vb=svg.getAttribute('viewBox').split(' ').map(Number);
+  const w=vb[2],h=vb[3],px=16,py=8;
   const iw=w-px*2,ih=h-py*2;
   const coords=scores.map((s,i)=>{
     const x=px+i/(scores.length-1)*iw;
@@ -534,35 +734,116 @@ function drawSparkline(){
   });
   const style=getComputedStyle(document.documentElement);
   const ac=style.getPropertyValue('--accent').trim();
-  const ac2=style.getPropertyValue('--accent-subtle').trim();
   const t2=style.getPropertyValue('--text-2').trim();
-
   let path='M'+coords.map(c=>c.join(',')).join('L');
   let area=path+`L${coords[coords.length-1][0]},${h} L${coords[0][0]},${h} Z`;
-
   svg.innerHTML=`
-    <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+    <defs><linearGradient id="sg-${svgId}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${ac}" stop-opacity=".25"/>
       <stop offset="100%" stop-color="${ac}" stop-opacity="0"/>
     </linearGradient></defs>
-    <path d="${area}" fill="url(#sg)"/>
+    <path d="${area}" fill="url(#sg-${svgId})"/>
     <path d="${path}" fill="none" stroke="${ac}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    ${coords.map((c,i)=>i===coords.length-1?
-      `<circle cx="${c[0]}" cy="${c[1]}" r="4" fill="${ac}"/>`:'').join('')}
-    <text x="${coords[coords.length-1][0]+8}" y="${coords[coords.length-1][1]+4}" fill="${t2}" font-size="11" font-family="IBM Plex Mono,monospace">${scores[scores.length-1]}</text>
-  `;
+    <circle cx="${coords[coords.length-1][0]}" cy="${coords[coords.length-1][1]}" r="4" fill="${ac}"/>
+    <text x="${coords[coords.length-1][0]+8}" y="${coords[coords.length-1][1]+4}" fill="${t2}" font-size="11" font-family="IBM Plex Mono,monospace">${scores[scores.length-1]}</text>`;
+}
+
+// --- Tables Select ---
+let selectedTables=new Set();
+
+function renderTablesSelect(){
+  const grid=document.getElementById('tables-grid');
+  grid.innerHTML='';
+  for(let t=2;t<=12;t++){
+    const btn=document.createElement('button');
+    btn.className='table-btn'+(selectedTables.has(t)?' selected':'');
+    const key=t+'x';
+    let acc='';
+    const facts=Object.entries(state.multFacts).filter(([k])=>k.startsWith(key));
+    if(facts.length>=5){
+      const ok=facts.reduce((s,[,v])=>s+v.ok,0);
+      const q=facts.reduce((s,[,v])=>s+v.q,0);
+      acc=q>0?Math.round(ok/q*100)+'%':'';
+    }
+    btn.innerHTML=`×${t}${acc?`<span class="table-acc">${acc}</span>`:''}`;
+    btn.onclick=()=>{
+      if(selectedTables.has(t))selectedTables.delete(t);else selectedTables.add(t);
+      renderTablesSelect();
+    };
+    grid.appendChild(btn);
+  }
+  document.getElementById('tables-start-btn').disabled=selectedTables.size===0;
+}
+
+function startTablesTraining(){
+  if(selectedTables.size===0)return;
+  startTraining('tables');
 }
 
 // --- Training ---
-function startTraining(){
-  session={questions:[],startTime:Date.now(),scoreBefore:state.score,streak:0,bestStreak:0};
+function startTraining(mode){
+  if(mode==='daily'&&state.dailyDone===today()){showToast('Défi déjà fait aujourd\'hui !');return}
+  checkNewDay();
+  session={
+    questions:[],startTime:Date.now(),scoreBefore:state.score,
+    streak:0,bestStreak:0,mode:mode||'standard',
+    retryQueue:[],questionsSinceRetry:0,
+    tableNums:[...selectedTables],
+    dailyQuestions:null,dailyIdx:0,dailyScore:0,
+    opBreakdown:{'+': {q:0,ok:0},'-': {q:0,ok:0},'×': {q:0,ok:0},'÷': {q:0,ok:0}},
+    chronoCount:0
+  };
+  if(mode==='daily'){
+    const seed=parseInt(today().replace(/-/g,''),10);
+    const rng=seededRNG(seed);
+    session.dailyQuestions=[];
+    for(let i=0;i<10;i++){
+      const{op,a,b,answer}=genSeeded(rng);
+      session.dailyQuestions.push(makeQuestion(op,a,b,answer));
+    }
+  }
   currentQ=null;
+  const chronoBar=document.getElementById('chrono-bar');
+  if(mode==='chrono'){
+    chronoBar.hidden=false;
+    chronoBar.textContent='60.0';
+    chronoBar.classList.remove('urgent');
+    chronoEnd=Date.now()+60000;
+    chronoInterval=setInterval(updateChrono,100);
+  }else{
+    chronoBar.hidden=true;
+    clearInterval(chronoInterval);
+  }
   showScreen('training');
   nextQuestion();
 }
 
+function updateChrono(){
+  const left=Math.max(0,(chronoEnd-Date.now())/1000);
+  const el=document.getElementById('chrono-bar');
+  el.textContent=left.toFixed(1);
+  if(left<=10)el.classList.add('urgent');
+  if(left<=0){
+    clearInterval(chronoInterval);
+    endSession();
+  }
+}
+
 function nextQuestion(){
-  currentQ=generateQuestion(state.score);
+  session.questionsSinceRetry++;
+  document.getElementById('t-hint').textContent='';
+
+  if(session.mode==='daily'){
+    if(session.dailyIdx>=session.dailyQuestions.length){endSession();return}
+    currentQ=session.dailyQuestions[session.dailyIdx++];
+  }else if(session.retryQueue.length>0&&session.questionsSinceRetry>=3){
+    currentQ=session.retryQueue.shift();
+    currentQ.isRetry=true;
+    session.questionsSinceRetry=0;
+  }else{
+    currentQ=generateQuestion(state.score,session.mode,session.tableNums);
+  }
+
   questionStart=Date.now();
   const area=document.getElementById('t-problem-area');
   area.classList.remove('correct','wrong');
@@ -576,9 +857,22 @@ function nextQuestion(){
 
 function startTimer(){
   clearInterval(timerInterval);
+  const bar=document.getElementById('t-timer-bar');
+  bar.style.width='100%';
+  bar.className='timer-bar-fill';
   timerInterval=setInterval(()=>{
-    const el=((Date.now()-questionStart)/1000).toFixed(1);
-    document.getElementById('t-timer').textContent=el+'s';
+    const elapsed=Date.now()-questionStart;
+    document.getElementById('t-timer').textContent=(elapsed/1000).toFixed(1)+'s';
+    if(currentQ){
+      const maxTime=currentQ.targetTime*2.5;
+      const pct=Math.max(0,1-elapsed/maxTime)*100;
+      bar.style.width=pct+'%';
+      const ratio=elapsed/maxTime;
+      if(ratio>0.75)bar.className='timer-bar-fill danger';
+      else if(ratio>0.4)bar.className='timer-bar-fill warn';
+      else bar.className='timer-bar-fill';
+      if(pct<=0)bar.className='timer-bar-fill over';
+    }
   },100);
 }
 
@@ -593,49 +887,88 @@ function submitAnswer(){
   inp.disabled=true;
   const timeMs=Date.now()-questionStart;
   const correct=userAns===currentQ.answer;
-  const delta=calcScoreChange(correct,timeMs,currentQ.questionDiff,state.score);
+  const tooSlow=correct&&timeMs>currentQ.targetTime*2.5;
 
-  state.score=Math.max(100,Math.min(2000,state.score+delta));
-  state.totalQ++;
-  if(correct)state.totalOk++;
+  let delta=0;
+  if(session.mode!=='chrono'){
+    delta=calcScoreChange(correct,timeMs,currentQ.questionDiff,state.score);
+    state.score=Math.max(100,Math.min(2000,state.score+delta));
+  }
+  state.totalQ++;state.todayQ++;
+  if(correct&&!tooSlow)state.totalOk++;
 
-  if(correct){
+  const op=currentQ.op;
+  if(state.opStats[op]){
+    state.opStats[op].q++;
+    if(correct&&!tooSlow)state.opStats[op].ok++;
+    state.opStats[op].ms+=timeMs;
+  }
+  if(op==='×'&&currentQ.a<=12&&currentQ.b<=12){
+    const k=Math.min(currentQ.a,currentQ.b)+'x'+Math.max(currentQ.a,currentQ.b);
+    if(!state.multFacts[k])state.multFacts[k]={q:0,ok:0};
+    state.multFacts[k].q++;
+    if(correct&&!tooSlow)state.multFacts[k].ok++;
+  }
+  if(session.opBreakdown[op]){
+    session.opBreakdown[op].q++;
+    if(correct&&!tooSlow)session.opBreakdown[op].ok++;
+  }
+
+  if(correct&&!tooSlow){
     session.streak++;
     if(session.streak>session.bestStreak)session.bestStreak=session.streak;
     if(session.streak>state.bestStreak)state.bestStreak=session.streak;
   }else{
     session.streak=0;
   }
+  if(correct)session.chronoCount++;
 
-  session.questions.push({correct,timeMs,delta});
+  if(session.mode==='daily'){
+    const speed=Math.max(0,50-Math.floor(timeMs/100));
+    session.dailyScore+=correct?(100+speed):0;
+  }
+
+  if(!correct||tooSlow){
+    if(!currentQ.isRetry||!correct){
+      session.retryQueue.push({...currentQ,isRetry:false});
+    }
+  }
+
+  session.questions.push({correct:correct&&!tooSlow,timeMs,delta,op});
   saveState();
 
-  // Feedback
   const area=document.getElementById('t-problem-area');
   const fb=document.getElementById('t-feedback');
-  if(correct){
+  const hintEl=document.getElementById('t-hint');
+  if(correct&&!tooSlow){
     area.classList.add('correct');
     fb.className='feedback-text ok';
     fb.textContent=timeMs<currentQ.targetTime?'Rapide !':'Correct';
+    hintEl.textContent='';
+  }else if(tooSlow){
+    area.classList.add('wrong');
+    fb.className='feedback-text err';
+    fb.textContent='Trop lent — '+currentQ.answer;
+    const h=getHint(currentQ.op,currentQ.a,currentQ.b,currentQ.answer);
+    hintEl.textContent=h||'';
   }else{
     area.classList.add('wrong');
     fb.className='feedback-text err';
     fb.textContent='Réponse : '+currentQ.answer;
+    const h=getHint(currentQ.op,currentQ.a,currentQ.b,currentQ.answer);
+    hintEl.textContent=h||'';
   }
 
   updateTrainingUI();
-
   const sb=document.getElementById('t-streak');
-  sb.classList.remove('pop');
-  void sb.offsetWidth;
-  sb.classList.add('pop');
+  sb.classList.remove('pop');void sb.offsetWidth;sb.classList.add('pop');
 
-  feedbackTimeout=setTimeout(()=>nextQuestion(),correct?700:1500);
+  const delay=(correct&&!tooSlow)?700:2200;
+  feedbackTimeout=setTimeout(()=>nextQuestion(),delay);
 }
 
 function updateTrainingUI(){
-  const lv=levelOf(state.score);
-  const pr=progressOf(state.score);
+  const lv=levelOf(state.score),pr=progressOf(state.score);
   document.getElementById('t-level').textContent=lv;
   document.getElementById('t-gauge').style.width=(pr*100)+'%';
   document.getElementById('t-streak').textContent=session.streak>0?session.streak+' ✓':'0';
@@ -645,49 +978,131 @@ function updateTrainingUI(){
 }
 
 function endSession(){
-  clearInterval(timerInterval);
-  clearTimeout(feedbackTimeout);
-  if(session.questions.length>0){
-    const qs=session.questions;
-    const ok=qs.filter(x=>x.correct).length;
-    const avgTime=Math.round(qs.reduce((s,q)=>s+q.timeMs,0)/qs.length);
-    state.sessions.push({
-      date:new Date().toISOString(),
-      count:qs.length,
-      correct:ok,
-      avgTimeMs:avgTime,
-      scoreBefore:session.scoreBefore,
-      scoreAfter:state.score
-    });
-    if(state.sessions.length>100)state.sessions=state.sessions.slice(-100);
-    saveState();
-    showRecap(qs,ok,avgTime);
-  }else{
-    showScreen('home');
+  clearInterval(timerInterval);clearInterval(chronoInterval);clearTimeout(feedbackTimeout);
+  if(!session||session.questions.length===0){showScreen('home');return}
+  const qs=session.questions;
+  const ok=qs.filter(x=>x.correct).length;
+  const avgTime=Math.round(qs.reduce((s,q)=>s+q.timeMs,0)/qs.length);
+
+  state.sessions.push({
+    date:new Date().toISOString(),count:qs.length,correct:ok,avgTimeMs:avgTime,
+    scoreBefore:session.scoreBefore,scoreAfter:state.score,
+    mode:session.mode,opBreakdown:session.opBreakdown
+  });
+  if(state.sessions.length>100)state.sessions=state.sessions.slice(-100);
+
+  if(session.mode==='chrono'){
+    if(session.chronoCount>state.chronoBest)state.chronoBest=session.chronoCount;
   }
+  if(session.mode==='daily'){
+    state.dailyDone=today();
+    state.dailyBestScore=Math.max(state.dailyBestScore||0,session.dailyScore);
+  }
+  saveState();
+  showRecap(qs,ok,avgTime);
 }
 
 function showRecap(qs,ok,avgTime){
+  const mode=session.mode;
+  document.getElementById('recap-title').textContent=
+    mode==='chrono'?'Chrono terminé !':
+    mode==='daily'?'Défi du jour':
+    'Session terminée';
+
   document.getElementById('r-count').textContent=qs.length;
   document.getElementById('r-correct').textContent=ok;
-  document.getElementById('r-acc').textContent=Math.round(ok/qs.length*100)+'%';
+  document.getElementById('r-acc').textContent=qs.length>0?Math.round(ok/qs.length*100)+'%':'0%';
   document.getElementById('r-time').textContent=(avgTime/1000).toFixed(1)+'s';
   document.getElementById('r-streak').textContent=session.bestStreak;
 
   const delta=state.score-session.scoreBefore;
   const dEl=document.getElementById('r-delta');
-  dEl.textContent=(delta>=0?'+':'')+delta;
-  dEl.className='recap-delta '+(delta>0?'up':delta<0?'down':'flat');
-
+  if(mode==='chrono'){
+    dEl.textContent=session.chronoCount+' bonnes réponses';
+    dEl.className='recap-delta flat';
+  }else if(mode==='daily'){
+    dEl.textContent=session.dailyScore+' pts';
+    dEl.className='recap-delta '+(session.dailyScore>=800?'up':'flat');
+  }else{
+    dEl.textContent=(delta>=0?'+':'')+delta;
+    dEl.className='recap-delta '+(delta>0?'up':delta<0?'down':'flat');
+  }
   document.getElementById('r-level').textContent='Niv. '+levelOf(state.score)+' — '+rank(levelOf(state.score));
+
+  const againBtn=document.getElementById('recap-again-btn');
+  againBtn.textContent=mode==='chrono'?'Encore !':mode==='daily'?'Accueil':'Encore !';
+  againBtn.onclick=()=>{
+    if(mode==='daily')showScreen('home');
+    else startTraining(mode);
+  };
+
+  const lbDiv=document.getElementById('recap-lb');
+  if(mode==='daily'&&db&&cloudUid){
+    lbDiv.hidden=false;
+    pushDailyScore(session.dailyScore);
+    loadDailyLeaderboard().then(renderLeaderboard);
+  }else{
+    lbDiv.hidden=true;
+  }
+
   showScreen('recap');
+}
+
+function renderLeaderboard(entries){
+  const list=document.getElementById('lb-list');
+  if(!entries||entries.length===0){list.innerHTML='<div style="font-size:.8rem;color:var(--text-2);text-align:center;padding:12px">Aucun score aujourd\'hui</div>';return}
+  list.innerHTML=entries.map((e,i)=>{
+    const me=e.uid===cloudUid?' me':'';
+    return `<div class="lb-row${me}"><span class="lb-rank">${i+1}</span><span class="lb-name">${e.username||'?'}</span><span class="lb-score">${e.score} pts</span></div>`;
+  }).join('');
+}
+
+// --- Stats ---
+function renderStats(){
+  const opsEl=document.getElementById('stats-ops');
+  opsEl.innerHTML='';
+  for(const op of ['+','-','×','÷']){
+    const st=state.opStats[op]||{q:0,ok:0,ms:0};
+    const acc=st.q>0?Math.round(st.ok/st.q*100):0;
+    const avgT=st.q>0?(st.ms/st.q/1000).toFixed(1)+'s':'--';
+    opsEl.innerHTML+=`<div class="op-stat-card">
+      <span class="op-stat-sym">${op}</span>
+      <div class="op-stat-info">
+        <div class="op-stat-bar"><div class="op-stat-fill" style="width:${acc}%"></div></div>
+        <div class="op-stat-details">
+          <span class="op-stat-pct">${acc}%</span>
+          <span>${st.q} questions</span>
+          <span>moy. ${avgT}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const weekAgo=Date.now()-7*86400000;
+  const recent=state.sessions.filter(s=>new Date(s.date).getTime()>weekAgo);
+  if(recent.length>0){
+    const totalQ=recent.reduce((s,r)=>s+r.count,0);
+    const totalOk=recent.reduce((s,r)=>s+r.correct,0);
+    const first=recent[0].scoreBefore,last=recent[recent.length-1].scoreAfter;
+    const levelDiff=((last-first)/100).toFixed(1);
+    document.getElementById('w-sessions').textContent=recent.length;
+    document.getElementById('w-questions').textContent=totalQ;
+    document.getElementById('w-accuracy').textContent=totalQ>0?Math.round(totalOk/totalQ*100)+'%':'--';
+    document.getElementById('w-level').textContent=(levelDiff>=0?'+':'')+levelDiff;
+  }else{
+    document.getElementById('w-sessions').textContent='0';
+    document.getElementById('w-questions').textContent='0';
+    document.getElementById('w-accuracy').textContent='--';
+    document.getElementById('w-level').textContent='--';
+  }
+
+  if(state.sessions.length>=2)drawSparkline('stats-graph',state.sessions.slice(-30));
+  else document.getElementById('stats-graph').innerHTML='<text x="260" y="60" fill="var(--text-2)" font-size="12" text-anchor="middle">Pas encore assez de données</text>';
 }
 
 function resetProgress(){
   if(!confirm('Réinitialiser toute ta progression ?'))return;
-  state=defaultState();
-  saveState();
-  renderHome();
+  state=defaultState();saveState();renderHome();
 }
 
 // --- Auth ---
@@ -714,18 +1129,14 @@ async function doAuth(){
   errEl.innerHTML='&nbsp;';
   document.getElementById('auth-submit').disabled=true;
   try{
-    if(authMode==='register'){
-      await firebase.auth().createUserWithEmailAndPassword(email,pass);
-    }else{
-      await firebase.auth().signInWithEmailAndPassword(email,pass);
-    }
+    if(authMode==='register') await firebase.auth().createUserWithEmailAndPassword(email,pass);
+    else await firebase.auth().signInWithEmailAndPassword(email,pass);
     try{localStorage.setItem('neuro-calcul-username',user)}catch{}
   }catch(e){
     let msg='Erreur inconnue';
     switch(e.code){
       case 'auth/email-already-in-use':msg='Ce pseudo est déjà pris';break;
-      case 'auth/user-not-found':
-      case 'auth/invalid-credential':msg='Pseudo ou mot de passe incorrect';break;
+      case 'auth/user-not-found':case 'auth/invalid-credential':msg='Pseudo ou mot de passe incorrect';break;
       case 'auth/wrong-password':msg='Mot de passe incorrect';break;
       case 'auth/weak-password':msg='Mot de passe trop faible';break;
       case 'auth/too-many-requests':msg='Trop de tentatives, réessaie plus tard';break;
@@ -738,36 +1149,25 @@ async function doAuth(){
 
 function skipAuth(){
   try{localStorage.setItem('neuro-calcul-skip','1')}catch{}
-  showScreen('home');
-  updateAccountBar();
+  showScreen('home');updateAccountBar();
 }
 
 function doLogout(){
-  if(typeof firebase!=='undefined'&&firebase.auth().currentUser){
-    firebase.auth().signOut();
-  }
-  cloudUid=null;
-  state=defaultState();
-  saveState(true);
+  if(typeof firebase!=='undefined'&&firebase.auth().currentUser)firebase.auth().signOut();
+  cloudUid=null;state=defaultState();saveState(true);
   try{localStorage.removeItem('neuro-calcul-username')}catch{}
-  updateAccountBar();
-  showScreen('auth');
+  updateAccountBar();showScreen('auth');
 }
 
 function updateAccountBar(){
   const info=document.getElementById('account-info');
   const btn=document.getElementById('account-btn');
-  let username;
-  try{username=localStorage.getItem('neuro-calcul-username')}catch{}
+  let username;try{username=localStorage.getItem('neuro-calcul-username')}catch{}
   if(cloudUid&&username){
-    info.textContent=username;
-    info.style.color='var(--ok)';
-    btn.textContent='Déconnexion';
-    btn.onclick=doLogout;
-    btn.style.display='';
+    info.textContent=username;info.style.color='var(--ok)';
+    btn.textContent='Déconnexion';btn.onclick=doLogout;btn.style.display='';
   }else{
-    info.textContent='Non connecté';
-    info.style.color='var(--text-2)';
+    info.textContent='Non connecté';info.style.color='var(--text-2)';
     btn.textContent='Se connecter';
     btn.onclick=function(){try{localStorage.removeItem('neuro-calcul-skip')}catch{};showScreen('auth')};
     btn.style.display='';
@@ -776,14 +1176,12 @@ function updateAccountBar(){
 
 function showToast(msg){
   const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.remove('show');
-  void t.offsetWidth;t.classList.add('show');
+  t.textContent=msg;t.classList.remove('show');void t.offsetWidth;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
 
-// --- Cloud Sync (Firebase) ---
-let db=null;
-let cloudUid=null;
+// --- Cloud ---
+let db=null,cloudUid=null;
 
 const firebaseConfig={
   apiKey:"AIzaSyAX3iCMZELyYe9kcN0suk-_dPxzbeqF7Ac",
@@ -798,10 +1196,31 @@ function pushToCloud(){
   if(!db||!cloudUid)return;
   db.collection('users').doc(cloudUid).set({
     score:state.score,totalQ:state.totalQ,totalOk:state.totalOk,
-    bestStreak:state.bestStreak,
-    sessions:state.sessions.slice(-50),
+    bestStreak:state.bestStreak,sessions:state.sessions.slice(-50),
+    opStats:state.opStats,multFacts:state.multFacts,
+    dailyStreak:state.dailyStreak,lastDay:state.lastDay,todayQ:state.todayQ,
+    chronoBest:state.chronoBest,dailyDone:state.dailyDone,dailyBestScore:state.dailyBestScore||0,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true}).catch(()=>{});
+}
+
+function pushDailyScore(score){
+  if(!db||!cloudUid)return;
+  const t=today();
+  let username;try{username=localStorage.getItem('neuro-calcul-username')}catch{}
+  db.collection('daily').doc(t).collection('scores').doc(cloudUid).set({
+    score,username:username||'Anonyme',
+    timestamp:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(()=>{});
+}
+
+async function loadDailyLeaderboard(){
+  if(!db)return[];
+  try{
+    const snap=await db.collection('daily').doc(today()).collection('scores')
+      .orderBy('score','desc').limit(10).get();
+    return snap.docs.map(d=>({...d.data(),uid:d.id}));
+  }catch{return[]}
 }
 
 function loadCloudData(d){
@@ -810,6 +1229,15 @@ function loadCloudData(d){
   state.totalOk=d.totalOk||0;
   state.bestStreak=Math.max(state.bestStreak,d.bestStreak||0);
   state.sessions=d.sessions||[];
+  if(d.opStats)state.opStats=d.opStats;
+  if(d.multFacts)state.multFacts=d.multFacts;
+  state.dailyStreak=d.dailyStreak||0;
+  state.lastDay=d.lastDay||null;
+  state.todayQ=d.todayQ||0;
+  state.chronoBest=Math.max(state.chronoBest||0,d.chronoBest||0);
+  state.dailyDone=d.dailyDone||null;
+  state.dailyBestScore=d.dailyBestScore||0;
+  migrateState(state);
   try{localStorage.setItem('neuro-calcul',JSON.stringify(state))}catch{}
   renderHome();
 }
@@ -817,52 +1245,32 @@ function loadCloudData(d){
 function initCloud(){
   let skipped=false,cachedUser=null;
   try{skipped=!!localStorage.getItem('neuro-calcul-skip');cachedUser=localStorage.getItem('neuro-calcul-username')}catch{}
-  if(skipped||cachedUser) showScreen('home');
+  if(skipped||cachedUser)showScreen('home');
 
-  if(typeof firebase==='undefined'){
-    showScreen('home');
-    updateAccountBar();
-    return;
-  }
-  try{
-    firebase.initializeApp(firebaseConfig);
-    db=firebase.firestore();
-  }catch{
-    showScreen('home');
-    updateAccountBar();
-    return;
-  }
+  if(typeof firebase==='undefined'){showScreen('home');updateAccountBar();return}
+  try{firebase.initializeApp(firebaseConfig);db=firebase.firestore()}catch{showScreen('home');updateAccountBar();return}
   firebase.auth().onAuthStateChanged(async user=>{
     if(user){
       cloudUid=user.uid;
       try{localStorage.setItem('neuro-calcul-username',user.email.replace('@neurocalcul.app',''))}catch{}
       try{
         const snap=await db.collection('users').doc(cloudUid).get();
-        if(snap.exists) loadCloudData(snap.data());
-        else if(state.totalQ>0) pushToCloud();
-        db.collection('users').doc(cloudUid).onSnapshot(snap=>{
-          if(!snap.exists)return;
-          loadCloudData(snap.data());
-        });
+        if(snap.exists)loadCloudData(snap.data());
+        else if(state.totalQ>0)pushToCloud();
+        db.collection('users').doc(cloudUid).onSnapshot(snap=>{if(!snap.exists)return;loadCloudData(snap.data())});
       }catch(e){console.warn('Sync error:',e)}
-      updateAccountBar();
-      showScreen('home');
+      updateAccountBar();showScreen('home');
       document.getElementById('auth-submit').disabled=false;
     }else{
-      cloudUid=null;
-      updateAccountBar();
-      if(!skipped&&!cachedUser) showScreen('auth');
+      cloudUid=null;updateAccountBar();
+      if(!skipped&&!cachedUser)showScreen('auth');
     }
   });
 }
 
 // Input handling
-document.getElementById('t-input').addEventListener('keydown',e=>{
-  if(e.key==='Enter')submitAnswer();
-});
-document.getElementById('auth-pass').addEventListener('keydown',e=>{
-  if(e.key==='Enter')doAuth();
-});
+document.getElementById('t-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitAnswer()});
+document.getElementById('auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth()});
 
 // Init
 initCloud();
