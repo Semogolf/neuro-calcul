@@ -14,6 +14,7 @@ window = webview.create_window(
     width=620,
     height=860,
     min_size=(380, 600),
+    fullscreen=True,
 )
 icon_path = os.path.join(dir_path, 'neuro-calcul.ico')
 webview.start(icon=icon_path)

@@ -73,6 +73,7 @@ button:active{transform:scale(.97)}
   border-radius:12px;padding:28px 24px;display:flex;flex-direction:column;gap:16px;
 }
 .level-header{display:flex;align-items:baseline;justify-content:space-between}
+.level-label{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:1rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
 .level-number{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:3rem;font-weight:700;line-height:1;color:var(--accent)}
 .level-rank{font-size:.8rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.08em}
 .gauge{width:100%;height:6px;background:var(--gauge-track);border-radius:3px;overflow:hidden}
@@ -319,7 +320,7 @@ button:active{transform:scale(.97)}
     <p class="home-subtitle">Entraînement adaptatif en calcul mental</p>
     <div class="level-card">
       <div class="level-header">
-        <div><span class="level-number" id="h-level">5</span></div>
+        <div><span class="level-label">Niveau</span> <span class="level-number" id="h-level">5</span></div>
         <span class="level-rank" id="h-rank">Apprenti</span>
       </div>
       <div class="gauge"><div class="gauge-fill" id="h-gauge" style="width:50%"></div></div>
@@ -1242,6 +1243,7 @@ function initCloud(){
 
   if(typeof firebase==='undefined'){showScreen('home');updateAccountBar();return}
   try{firebase.initializeApp(firebaseConfig);db=firebase.firestore()}catch{showScreen('home');updateAccountBar();return}
+  try{firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)}catch{}
   firebase.auth().onAuthStateChanged(async user=>{
     if(user){
       cloudUid=user.uid;
