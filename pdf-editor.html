@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<title>Champs PDF</title>
+<link rel="manifest" href="pdf-editor-manifest.json">
+<link rel="icon" href="pdf-assets/pdf-icon-192.png">
+<link rel="apple-touch-icon" href="pdf-assets/pdf-icon-192.png">
+<meta name="theme-color" content="#B87530">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Champs PDF">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F5F1EA; --bg-raised:#FFFFFF; --bg-surface:#ECE8E0;
+  --text:#2A3038; --text-2:#7A7268;
+  --accent:#B87530; --accent-hover:#A0642A; --accent-subtle:#F0E0CC;
+  --ok:#3A8A6B; --ok-subtle:#D8F0E4; --err:#BE4A3A; --err-subtle:#F5DCD8;
+  --border:#D8D2C8; --input-bg:#FFFFFF; --input-border:#C8C0B4;
+  --field:#2E6FB8; --field-bg:rgba(46,111,184,.10); --field-bd:rgba(46,111,184,.55);
+  --shadow:0 4px 24px rgba(40,30,15,.14);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#181F2A; --bg-raised:#1E2838; --bg-surface:#222E3E;
+  --text:#D4CEC4; --text-2:#8A8478;
+  --accent:#D4883A; --accent-hover:#E09848; --accent-subtle:#3A2E20;
+  --ok:#48A882; --ok-subtle:#1A3028; --err:#D46050; --err-subtle:#3A1E1A;
+  --border:#2E3A4A; --input-bg:#1A2535; --input-border:#354558;
+  --field:#5CA0E8; --field-bg:rgba(92,160,232,.14); --field-bd:rgba(92,160,232,.6);
+  --shadow:0 4px 28px rgba(0,0,0,.45);
+}}
+:root[data-theme="dark"]{
+  --bg:#181F2A; --bg-raised:#1E2838; --bg-surface:#222E3E;
+  --text:#D4CEC4; --text-2:#8A8478;
+  --accent:#D4883A; --accent-hover:#E09848; --accent-subtle:#3A2E20;
+  --ok:#48A882; --ok-subtle:#1A3028; --err:#D46050; --err-subtle:#3A1E1A;
+  --border:#2E3A4A; --input-bg:#1A2535; --input-border:#354558;
+  --field:#5CA0E8; --field-bg:rgba(92,160,232,.14); --field-bd:rgba(92,160,232,.6);
+  --shadow:0 4px 28px rgba(0,0,0,.45);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:'IBM Plex Mono',monospace;
+  display:flex;flex-direction:column;overflow:hidden;
+  -webkit-user-select:none;user-select:none;
+  padding-top:env(safe-area-inset-top);
+}
+h1,h2,h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;margin:0;font-weight:700}
+button{font-family:'Bricolage Grotesque',system-ui,sans-serif;border:none;cursor:pointer;font-weight:600;color:inherit;background:none;transition:background .15s,transform .1s,opacity .15s}
+button:active{transform:scale(.96)}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--bg-raised);border-bottom:1px solid var(--border);
+  flex:none;z-index:40;
+}
+.brand{display:flex;align-items:center;gap:9px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:1.05rem;color:var(--accent)}
+.brand img{width:26px;height:26px;border-radius:7px}
+.brand .sub{font-size:.62rem;color:var(--text-2);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.spacer{flex:1}
+.tb-btn{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:9px;background:var(--bg-surface);color:var(--text);font-size:.82rem;border:1px solid var(--border)}
+.tb-btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+.tb-btn.primary:disabled{opacity:.4}
+.tb-btn svg{width:16px;height:16px}
+
+/* ---------- Toolbar ---------- */
+.toolbar{
+  display:none;align-items:center;gap:6px;padding:8px 10px;overflow-x:auto;
+  background:var(--bg-raised);border-bottom:1px solid var(--border);flex:none;z-index:30;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.toolbar::-webkit-scrollbar{display:none}
+body.loaded .toolbar{display:flex}
+.tool{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 11px;border-radius:9px;background:var(--bg-surface);color:var(--text-2);font-size:.62rem;min-width:52px;border:1px solid transparent;white-space:nowrap}
+.tool svg{width:19px;height:19px}
+.tool.active{background:var(--accent-subtle);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.tdiv{width:1px;height:30px;background:var(--border);margin:0 4px;flex:none}
+.zoom{display:flex;align-items:center;gap:2px;background:var(--bg-surface);border-radius:9px;padding:3px}
+.zoom button{width:32px;height:32px;border-radius:7px;font-size:1.2rem;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.zoom .z-val{font-size:.66rem;color:var(--text-2);min-width:38px;text-align:center}
+.pageind{margin-left:auto;font-size:.7rem;color:var(--text-2);background:var(--bg-surface);padding:6px 10px;border-radius:9px;white-space:nowrap}
+
+/* ---------- Viewer ---------- */
+.viewer{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;position:relative;overscroll-behavior:contain}
+.pages{display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px 10px 140px;min-height:100%}
+
+/* empty state */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;height:100%;padding:30px 24px}
+.empty .ico{width:84px;height:84px;border-radius:22px;box-shadow:var(--shadow)}
+.empty h2{font-size:1.45rem;color:var(--text)}
+.empty p{font-size:.85rem;color:var(--text-2);line-height:1.6;max-width:340px;margin:0}
+.empty .cta{margin-top:6px;padding:15px 26px;border-radius:13px;background:var(--accent);color:#fff;font-size:1rem;display:flex;align-items:center;gap:9px;box-shadow:var(--shadow)}
+.empty .cta svg{width:20px;height:20px}
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:360px;width:100%;margin-top:10px}
+.feat div{background:var(--bg-raised);border:1px solid var(--border);border-radius:11px;padding:12px 10px;font-size:.72rem;color:var(--text-2);display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center}
+.feat strong{color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:.82rem}
+.feat svg{width:20px;height:20px;color:var(--accent)}
+
+/* page */
+.pagewrap{position:relative;background:#fff;box-shadow:var(--shadow);border-radius:4px;overflow:hidden;flex:none}
+.pagewrap canvas{display:block}
+.layer{position:absolute;inset:0}
+.fieldlayer{pointer-events:none}
+.catcher{pointer-events:none}
+.annolayer{pointer-events:none}
+
+/* form controls overlay */
+.fc{position:absolute;pointer-events:auto;font-family:'IBM Plex Mono',monospace}
+.fc input[type=text],.fc textarea,.fc select{
+  width:100%;height:100%;border:1.4px solid var(--field-bd);background:var(--field-bg);
+  color:var(--text);border-radius:3px;padding:1px 4px;font-family:inherit;outline:none;
+  -webkit-user-select:auto;user-select:auto;line-height:1.05;
+}
+.fc textarea{resize:none;padding:3px 4px;line-height:1.15}
+.fc input:focus,.fc textarea:focus,.fc select:focus{border-color:var(--accent);background:var(--bg-raised);box-shadow:0 0 0 2px var(--accent-subtle)}
+.fc.check,.fc.radio{display:flex;align-items:center;justify-content:center}
+.fc .box{width:100%;height:100%;min-width:14px;min-height:14px;border:1.6px solid var(--field-bd);background:var(--field-bg);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--accent);cursor:pointer}
+.fc.radio .box{border-radius:50%}
+.fc .box.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.fc .box svg{width:78%;height:78%}
+
+/* annotations */
+.anno{position:absolute;pointer-events:auto;touch-action:none}
+.anno.text{color:#1a1a1a;white-space:pre-wrap;line-height:1.15;padding:1px 2px;min-width:12px;min-height:1em;outline:none;cursor:move;font-family:Helvetica,Arial,sans-serif}
+.anno.text:empty::before{content:"Texte…";color:#999}
+.anno.text.editing{cursor:text;-webkit-user-select:text;user-select:text;background:rgba(255,255,230,.6)}
+.anno.check{color:var(--ok);cursor:move;display:flex;align-items:center;justify-content:center;line-height:1;font-family:system-ui}
+.anno.sig{cursor:move}
+.anno.sig img{width:100%;height:100%;display:block;pointer-events:none}
+.anno.sel{outline:1.6px dashed var(--accent);outline-offset:2px}
+.anno .rsz{position:absolute;right:-9px;bottom:-9px;width:20px;height:20px;background:var(--accent);border:2px solid #fff;border-radius:50%;cursor:nwse-resize;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+/* selection bar */
+.selbar{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(140%);
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:6px;padding:7px;border-radius:14px;
+  background:var(--bg-raised);box-shadow:var(--shadow);border:1px solid var(--border);
+  z-index:60;transition:transform .22s cubic-bezier(.22,1,.36,1);max-width:94vw;
+}
+.selbar.show{transform:translateX(-50%) translateY(0)}
+.selbar .lab{font-size:.68rem;color:var(--text-2);padding:0 6px;text-transform:uppercase;letter-spacing:.05em}
+.selbar button{display:flex;align-items:center;justify-content:center;gap:4px;height:40px;min-width:40px;padding:0 10px;border-radius:10px;background:var(--bg-surface);font-size:.95rem;color:var(--text)}
+.selbar button.del{background:var(--err-subtle);color:var(--err)}
+.selbar button.done{background:var(--accent);color:#fff;padding:0 16px;font-size:.8rem}
+.selbar button svg{width:18px;height:18px}
+
+/* sheet / modal */
+.scrim{position:fixed;inset:0;background:rgba(10,8,4,.55);z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:101;background:var(--bg-raised);
+  border-radius:20px 20px 0 0;box-shadow:var(--shadow);padding:10px 20px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(110%);transition:transform .28s cubic-bezier(.22,1,.36,1);max-width:580px;margin:0 auto;
+}
+.sheet.show{transform:translateY(0)}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--border);margin:6px auto 14px}
+.sheet h3{font-size:1.15rem;margin-bottom:4px}
+.sheet .hint{font-size:.78rem;color:var(--text-2);margin-bottom:16px;line-height:1.5}
+.opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-surface);margin-bottom:12px}
+.opt .t{flex:1}
+.opt .t b{font-family:'Bricolage Grotesque',sans-serif;font-size:.9rem;display:block}
+.opt .t span{font-size:.72rem;color:var(--text-2)}
+.switch{width:46px;height:28px;border-radius:14px;background:var(--border);position:relative;flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch.on{background:var(--ok)}
+.switch.on::after{left:21px}
+.sheet .row{display:flex;gap:10px;margin-top:6px}
+.sheet .row button{flex:1;padding:15px;border-radius:13px;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-main{background:var(--accent);color:#fff}
+.btn-sec{background:var(--bg-surface);color:var(--text);border:1px solid var(--border)}
+.sheet .row button svg{width:18px;height:18px}
+
+/* signature modal */
+.sigmodal{position:fixed;inset:0;z-index:110;background:var(--bg);display:none;flex-direction:column;padding:14px;padding-top:calc(14px + env(safe-area-inset-top))}
+.sigmodal.show{display:flex}
+.sigmodal h3{text-align:center;margin-bottom:4px}
+.sigmodal p{text-align:center;font-size:.76rem;color:var(--text-2);margin:0 0 12px}
+.sigpad{flex:1;background:var(--bg-raised);border:2px dashed var(--border);border-radius:16px;position:relative;overflow:hidden;touch-action:none}
+.sigpad canvas{position:absolute;inset:0;width:100%;height:100%}
+.sigpad .base{position:absolute;left:8%;right:8%;bottom:34%;border-bottom:1.5px solid var(--border);pointer-events:none}
+.sigrow{display:flex;gap:10px;margin-top:14px}
+.sigrow button{flex:1;padding:15px;border-radius:13px;font-size:.92rem}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:.8rem;z-index:200;opacity:0;pointer-events:none;transition:all .25s;max-width:88vw;text-align:center;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* loader */
+.loader{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:150}
+.loader.show{display:flex}
+.spin{width:44px;height:44px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader span{font-size:.82rem;color:var(--text-2)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><img src="pdf-assets/pdf-icon-192.png" alt=""><div>Champs PDF<div class="sub">éditeur de PDF</div></div></div>
+  <div class="spacer"></div>
+  <button class="tb-btn" id="openBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span id="openLbl">Ouvrir</span></button>
+  <button class="tb-btn primary" id="exportBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Export</button>
+</div>
+
+<div class="toolbar" id="toolbar">
+  <button class="tool active" data-tool="fields" id="toolFields"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="5" rx="1.5"/><path d="M7 9.5h2"/><rect x="3" y="15" width="18" height="5" rx="1.5"/><path d="M7 17.5h6"/></svg>Champs</button>
+  <button class="tool" data-tool="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>Texte</button>
+  <button class="tool" data-tool="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Coche</button>
+  <button class="tool" data-tool="sig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19c3-1 4-5 6-5s2 3 4 3 3-6 5-6"/><path d="M3 21h18"/></svg>Signature</button>
+  <div class="tdiv"></div>
+  <div class="zoom">
+    <button id="zOut">−</button><span class="z-val" id="zVal">100%</span><button id="zIn">+</button>
+  </div>
+  <div class="pageind" id="pageInd">1 / 1</div>
+</div>
+
+<div class="viewer" id="viewer">
+  <div class="empty" id="empty">
+    <img class="ico" src="pdf-assets/pdf-icon-192.png" alt="">
+    <h2>Modifiez vos PDF facilement</h2>
+    <p>Remplissez les champs de formulaire, ajoutez du texte, des coches et votre signature — puis exportez un PDF propre.</p>
+    <button class="cta" id="openBtn2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Ouvrir un PDF</button>
+    <div class="feat">
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg><strong>Champs auto</strong>Détection des formulaires</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V5h16v2M12 5v14M9 19h6"/></svg><strong>Texte libre</strong>Sur n'importe quel PDF</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-1 4-4 6-4s2 2 4 2 3-5 5-5"/></svg><strong>Signature</strong>Dessinée au doigt</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 11l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" stroke-linecap="round"/></svg><strong>100% privé</strong>Tout reste sur l'appareil</div>
+    </div>
+  </div>
+  <div class="pages" id="pages" hidden></div>
+</div>
+
+<div class="selbar" id="selbar">
+  <span class="lab" id="selLab">Texte</span>
+  <button id="selMinus">A−</button>
+  <button id="selPlus">A+</button>
+  <button class="del" id="selDel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+  <button class="done" id="selDone">Terminé</button>
+</div>
+
+<!-- export sheet -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <h3>Exporter le PDF</h3>
+  <p class="hint" id="exportHint">Enregistrez votre document avec les champs remplis.</p>
+  <div class="opt">
+    <div class="t"><b>Aplatir le document</b><span>Verrouille les champs (non modifiables ensuite)</span></div>
+    <div class="switch" id="flatSwitch"></div>
+  </div>
+  <div class="row">
+    <button class="btn-sec" id="dlBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Télécharger</button>
+    <button class="btn-main" id="shareBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4M12 2v14"/></svg>Partager</button>
+  </div>
+</div>
+
+<!-- signature modal -->
+<div class="sigmodal" id="sigModal">
+  <h3>Votre signature</h3>
+  <p>Signez dans le cadre avec votre doigt</p>
+  <div class="sigpad" id="sigPad"><div class="base"></div><canvas id="sigCanvas"></canvas></div>
+  <div class="sigrow">
+    <button class="btn-sec" id="sigClear">Effacer</button>
+    <button class="btn-sec" id="sigCancel">Annuler</button>
+    <button class="btn-main" id="sigOk">Ajouter</button>
+  </div>
+</div>
+
+<div class="loader" id="loader"><div class="spin"></div><span id="loaderTxt">Chargement…</span></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileInput" accept="application/pdf,.pdf" hidden>
+
+<script src="pdf-assets/pdf.min.js"></script>
+<script src="pdf-assets/pdf-lib.min.js"></script>
+<script>
+"use strict";
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf-assets/pdf.worker.min.js';
+
+const $ = s => document.querySelector(s);
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+
+const S = {
+  pdfBytes:null, doc:null, fileName:'document.pdf', numPages:0,
+  zoom:1, tool:'fields',
+  pages:[],          // {num, wrap, canvas, fieldLayer, catcher, annoLayer, vp, wPt, hPt, cssScale, cssW, cssH, widgets:[]}
+  fieldValues:{},    // name -> value   (text:string, check:bool, radio:string, choice:string)
+  annos:[],          // {id,type,page,fx,fy,text?,sizePt?,wFrac?,aspect?,dataURL?,el}
+  selected:null,
+  curPage:0,
+  flatten:false,
+  _annoId:0,
+};
+
+/* ---------- utilities ---------- */
+function toast(msg,ms){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'), ms||2200);
+}
+function showLoader(txt){ $('#loaderTxt').textContent=txt||'Chargement…'; $('#loader').classList.add('show'); }
+function hideLoader(){ $('#loader').classList.remove('show'); }
+function vibrate(ms){ try{ navigator.vibrate && navigator.vibrate(ms||8); }catch(e){} }
+function svgNS(d,sw){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||3}" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`; }
+function winAnsi(s){
+  return (s==null?'':String(s))
+    .replace(/[‘’‛]/g,"'").replace(/[“”]/g,'"')
+    .replace(/[–—−]/g,'-').replace(/…/g,'...')
+    .replace(/ /g,' ').replace(/\t/g,'  ')
+    .replace(/[^\x09\x0A\x0D\x20-\xFF]/g,'');
+}
+
+/* ---------- file handling ---------- */
+$('#fileInput').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) openFile(f); e.target.value=''; });
+['#openBtn','#openBtn2'].forEach(id=>$(id).addEventListener('click',()=>$('#fileInput').click()));
+
+// drag & drop (desktop)
+const viewer=$('#viewer');
+['dragover','dragenter'].forEach(ev=>viewer.addEventListener(ev,e=>{e.preventDefault();}));
+viewer.addEventListener('drop',e=>{ e.preventDefault(); const f=e.dataTransfer.files[0]; if(f&&f.type==='application/pdf') openFile(f); });
+
+async function openFile(file){
+  if(file.type && file.type!=='application/pdf' && !/\.pdf$/i.test(file.name)){ toast('Veuillez choisir un fichier PDF'); return; }
+  showLoader('Ouverture du PDF…');
+  try{
+    const buf = await file.arrayBuffer();
+    S.pdfBytes = new Uint8Array(buf.slice(0));          // kept intact for pdf-lib
+    S.fileName = file.name || 'document.pdf';
+    S.doc = await pdfjsLib.getDocument({ data:new Uint8Array(buf.slice(0)) }).promise;
+    S.numPages = S.doc.numPages;
+    // reset
+    S.pages=[]; S.annos=[]; S.fieldValues={}; S.selected=null; S.zoom=1; S.curPage=0;
+    $('#pages').innerHTML=''; $('#pages').hidden=false; $('#empty').style.display='none';
+    document.body.classList.add('loaded');
+    $('#exportBtn').disabled=false; $('#openLbl').textContent='Changer';
+    await buildAllPages();
+    setTool('fields');
+    updateZoomLabel();
+    // detect fields
+    let nf=0; S.pages.forEach(p=>nf+=p.widgets.length);
+    hideLoader();
+    if(nf>0) toast(nf+' champ'+(nf>1?'s':'')+' détecté'+(nf>1?'s':'')+' — touchez pour remplir');
+    else { setTool('text'); toast('Aucun champ détecté — ajoutez texte, coche ou signature'); }
+  }catch(err){
+    console.error(err); hideLoader(); toast('Impossible d\'ouvrir ce PDF');
+  }
+}
+
+/* ---------- rendering ---------- */
+function availWidth(){ return Math.max(240, viewer.clientWidth - 20); }
+
+async function buildAllPages(){
+  const frag=document.createDocumentFragment();
+  for(let i=1;i<=S.numPages;i++){
+    const page=await S.doc.getPage(i);
+    const base=page.getViewport({scale:1});
+    const wPt=base.width, hPt=base.height;
+    const cssScale=(availWidth()*S.zoom)/wPt;
+    const vp=page.getViewport({scale:cssScale});
+    const wrap=document.createElement('div'); wrap.className='pagewrap';
+    wrap.style.width=vp.width+'px'; wrap.style.height=vp.height+'px';
+    const canvas=document.createElement('canvas');
+    const fieldLayer=document.createElement('div'); fieldLayer.className='layer fieldlayer';
+    const catcher=document.createElement('div'); catcher.className='layer catcher';
+    const annoLayer=document.createElement('div'); annoLayer.className='layer annolayer';
+    wrap.append(canvas,fieldLayer,catcher,annoLayer);
+    frag.appendChild(wrap);
+    const P={num:i,_page:page,wrap,canvas,fieldLayer,catcher,annoLayer,vp,wPt,hPt,cssScale,widgets:[]};
+    S.pages.push(P);
+    await renderCanvas(P);
+    const annots=await page.getAnnotations({intent:'display'});
+    P.widgets = annots.filter(a=>a.subtype==='Widget' && a.fieldType && !a.pushButton);
+    buildFieldControls(P);
+    attachCatcher(P);
+  }
+  $('#pages').appendChild(frag);
+}
+
+async function renderCanvas(P){
+  const scale=P.cssScale*DPR;
+  const vp=P._page.getViewport({scale});
+  P.canvas.width=Math.floor(vp.width); P.canvas.height=Math.floor(vp.height);
+  P.canvas.style.width=P.vp.width+'px'; P.canvas.style.height=P.vp.height+'px';
+  const ctx=P.canvas.getContext('2d',{alpha:false});
+  await P._page.render({canvasContext:ctx,viewport:vp}).promise;
+}
+
+function normRect(vp,rect){
+  const r=vp.convertToViewportRectangle(rect);
+  return {left:Math.min(r[0],r[2]), top:Math.min(r[1],r[3]), width:Math.abs(r[2]-r[0]), height:Math.abs(r[3]-r[1])};
+}
+
+function buildFieldControls(P){
+  P.fieldLayer.innerHTML='';
+  P.widgets.forEach(a=>{
+    const r=normRect(P.vp,a.rect);
+    const name=a.fieldName||('f'+Math.random());
+    const holder=document.createElement('div'); holder.className='fc';
+    holder.style.left=r.left+'px'; holder.style.top=r.top+'px';
+    holder.style.width=r.width+'px'; holder.style.height=r.height+'px';
+    const fs=Math.max(9,Math.min(r.height*0.62, 22));
+
+    if(a.fieldType==='Tx'){
+      let el;
+      if(a.multiLine){ el=document.createElement('textarea'); }
+      else { el=document.createElement('input'); el.type='text'; }
+      el.style.fontSize=fs+'px';
+      if(a.maxLen) el.maxLength=a.maxLen;
+      if(name in S.fieldValues) el.value=S.fieldValues[name];
+      else if(a.fieldValue!=null){ el.value=a.fieldValue; S.fieldValues[name]=a.fieldValue; }
+      if(a.readOnly) el.readOnly=true;
+      el.addEventListener('input',()=>{ S.fieldValues[name]=el.value; });
+      holder.appendChild(el);
+    }
+    else if(a.fieldType==='Btn' && a.checkBox){
+      holder.classList.add('check');
+      const on=(name in S.fieldValues)?S.fieldValues[name]:(a.fieldValue && a.fieldValue!=='Off');
+      S.fieldValues[name]=!!on;
+      const box=document.createElement('div'); box.className='box'+(on?' on':'');
+      box.innerHTML=svgNS('M20 6L9 17l-5-5',3.2);
+      box._exp=a.exportValue||'Yes';
+      box.addEventListener('click',()=>{ const v=!box.classList.contains('on'); box.classList.toggle('on',v); S.fieldValues[name]=v; vibrate(); });
+      holder.appendChild(box);
+    }
+    else if(a.fieldType==='Btn' && a.radioButton){
+      holder.classList.add('radio');
+      const val=a.buttonValue;
+      const cur=(name in S.fieldValues)?S.fieldValues[name]:a.fieldValue;
+      if(cur!=null && !(name in S.fieldValues)) S.fieldValues[name]=cur;
+      const box=document.createElement('div'); box.className='box'+(cur===val?' on':'');
+      box.innerHTML='<div style="width:48%;height:48%;border-radius:50%;background:currentColor"></div>';
+      box.addEventListener('click',()=>{
+        S.fieldValues[name]=val;
+        P.fieldLayer.querySelectorAll('.fc.radio .box').forEach(b=>{ if(b._name===name) b.classList.toggle('on', b._val===val); });
+        vibrate();
+      });
+      box._name=name; box._val=val;
+      holder.appendChild(box);
+    }
+    else if(a.fieldType==='Ch'){
+      const sel=document.createElement('select'); sel.style.fontSize=fs+'px';
+      const opts=a.options||[];
+      const blank=document.createElement('option'); blank.value=''; blank.textContent='—'; sel.appendChild(blank);
+      opts.forEach(o=>{ const op=document.createElement('option'); op.value=o.exportValue; op.textContent=o.displayValue||o.exportValue; sel.appendChild(op); });
+      const cur=(name in S.fieldValues)?S.fieldValues[name]:(Array.isArray(a.fieldValue)?a.fieldValue[0]:a.fieldValue);
+      if(cur!=null){ sel.value=cur; S.fieldValues[name]=cur; }
+      sel.addEventListener('change',()=>{ S.fieldValues[name]=sel.value; });
+      holder.appendChild(sel);
+    } else return;
+
+    P.fieldLayer.appendChild(holder);
+  });
+}
+
+/* ---------- tap to create annotations ---------- */
+function attachCatcher(P){
+  P.catcher.addEventListener('pointerdown', e=>{
+    if(S.tool!=='text' && S.tool!=='check') return;
+    e.preventDefault();   // keep focus available for the new text box (also lets iOS raise the keyboard)
+    const rect=P.wrap.getBoundingClientRect();
+    const fx=(e.clientX-rect.left)/P.vp.width;
+    const fy=(e.clientY-rect.top)/P.vp.height;
+    if(S.tool==='text') createText(P.num-1, fx, fy);
+    else createCheck(P.num-1, fx, fy);
+  });
+}
+
+/* ---------- annotation elements ---------- */
+function nextId(){ return 'a'+(++S._annoId); }
+
+function createText(pageIdx, fx, fy){
+  const a={id:nextId(),type:'text',page:pageIdx,fx,fy,text:'',sizePt:14};
+  S.annos.push(a); renderAnno(a); selectAnno(a); enterEdit(a); vibrate();
+}
+function createCheck(pageIdx, fx, fy){
+  const a={id:nextId(),type:'check',page:pageIdx,fx,fy,sizePt:20};
+  S.annos.push(a); renderAnno(a); selectAnno(a); vibrate();
+}
+function addSignature(dataURL, aspect){
+  const pIdx=S.curPage;
+  const wFrac=0.42, fx=(1-wFrac)/2, fy=0.4;
+  const a={id:nextId(),type:'sig',page:pIdx,fx,fy,wFrac,aspect,dataURL};
+  S.annos.push(a); renderAnno(a); selectAnno(a);
+  S.pages[pIdx].wrap.scrollIntoView({behavior:'smooth',block:'center'});
+  toast('Déplacez et redimensionnez la signature');
+}
+
+function renderAnno(a){
+  const P=S.pages[a.page]; if(!P) return;
+  let el=a.el;
+  if(!el){
+    el=document.createElement('div'); a.el=el; el.dataset.id=a.id;
+    P.annoLayer.appendChild(el);
+    el.addEventListener('pointerdown', ev=>onAnnoDown(ev,a));
+  }
+  el.className='anno '+a.type+(S.selected===a?' sel':'');
+  layoutAnno(a);
+  if(a.type==='text'){
+    if(document.activeElement!==el) el.textContent=a.text;
+  } else if(a.type==='check'){
+    el.textContent='✓';
+  } else if(a.type==='sig'){
+    el.innerHTML='<img src="'+a.dataURL+'" alt="signature">';
+  }
+  // resize handle for sig & check
+  if(S.selected===a && (a.type==='sig')){
+    if(!el.querySelector('.rsz')){ const h=document.createElement('div'); h.className='rsz'; el.appendChild(h); h.addEventListener('pointerdown',ev=>onResizeDown(ev,a)); }
+  }
+}
+
+function layoutAnno(a){
+  const P=S.pages[a.page]; if(!P||!a.el) return;
+  const el=a.el;
+  el.style.left=(a.fx*P.vp.width)+'px';
+  el.style.top=(a.fy*P.vp.height)+'px';
+  if(a.type==='text'){ el.style.fontSize=(a.sizePt*P.cssScale)+'px'; }
+  else if(a.type==='check'){ el.style.fontSize=(a.sizePt*P.cssScale)+'px'; el.style.width=(a.sizePt*P.cssScale)+'px'; el.style.height=(a.sizePt*P.cssScale)+'px'; }
+  else if(a.type==='sig'){ const w=a.wFrac*P.vp.width; el.style.width=w+'px'; el.style.height=(w/a.aspect)+'px'; }
+}
+
+/* ---------- drag / edit / resize ---------- */
+let drag=null;
+function onAnnoDown(e,a){
+  const el=a.el;
+  if(el.classList.contains('editing')) return;         // let text editing work
+  if(e.target.classList.contains('rsz')) return;
+  e.preventDefault(); e.stopPropagation();
+  selectAnno(a);
+  const P=S.pages[a.page];
+  drag={a,startX:e.clientX,startY:e.clientY,baseFx:a.fx,baseFy:a.fy,moved:false,P};
+  el.setPointerCapture(e.pointerId);
+  el.addEventListener('pointermove',onAnnoMove);
+  el.addEventListener('pointerup',onAnnoUp);
+  el.addEventListener('pointercancel',onAnnoUp);
+}
+function onAnnoMove(e){
+  if(!drag) return;
+  const dx=e.clientX-drag.startX, dy=e.clientY-drag.startY;
+  if(!drag.moved && Math.hypot(dx,dy)<5) return;
+  drag.moved=true;
+  const a=drag.a, P=drag.P;
+  a.fx=Math.max(0,Math.min(1, drag.baseFx+dx/P.vp.width));
+  a.fy=Math.max(0,Math.min(1, drag.baseFy+dy/P.vp.height));
+  layoutAnno(a);
+}
+function onAnnoUp(e){
+  if(!drag) return;
+  const a=drag.a, el=a.el, moved=drag.moved;
+  el.removeEventListener('pointermove',onAnnoMove);
+  el.removeEventListener('pointerup',onAnnoUp);
+  el.removeEventListener('pointercancel',onAnnoUp);
+  try{ el.releasePointerCapture(e.pointerId);}catch(_){}
+  drag=null;
+  if(!moved && a.type==='text') enterEdit(a);
+}
+
+let rsz=null;
+function onResizeDown(e,a){
+  e.preventDefault(); e.stopPropagation();
+  const P=S.pages[a.page];
+  rsz={a,startX:e.clientX,baseW:a.wFrac,P};
+  const h=e.target; h.setPointerCapture(e.pointerId);
+  h.addEventListener('pointermove',onResizeMove);
+  h.addEventListener('pointerup',onResizeUp);
+}
+function onResizeMove(e){
+  if(!rsz) return;
+  const dx=e.clientX-rsz.startX;
+  rsz.a.wFrac=Math.max(0.08,Math.min(1, rsz.baseW+dx/rsz.P.vp.width));
+  layoutAnno(rsz.a);
+}
+function onResizeUp(e){ const h=e.target; h.removeEventListener('pointermove',onResizeMove); h.removeEventListener('pointerup',onResizeUp); try{h.releasePointerCapture(e.pointerId);}catch(_){} rsz=null; }
+
+function enterEdit(a){
+  const el=a.el; el.classList.add('editing'); el.contentEditable='true';
+  el.focus();
+  // place caret at end
+  const r=document.createRange(); r.selectNodeContents(el); r.collapse(false);
+  const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+  const save=()=>{ a.text=el.textContent; el.classList.remove('editing'); el.contentEditable='false'; el.removeEventListener('blur',save); };
+  el.addEventListener('blur',save);
+}
+
+/* ---------- selection ---------- */
+function selectAnno(a){
+  if(S.selected && S.selected!==a && S.selected.el){ S.selected.el.classList.remove('sel'); const r=S.selected.el.querySelector('.rsz'); if(r)r.remove(); if(S.selected.type==='text'){S.selected.el.classList.remove('editing');S.selected.el.contentEditable='false';} }
+  S.selected=a;
+  if(a){ renderAnno(a); showSelBar(a); }
+  else hideSelBar();
+}
+function deselect(){ selectAnno(null); }
+
+function showSelBar(a){
+  const bar=$('#selbar');
+  $('#selLab').textContent = a.type==='text'?'Texte':(a.type==='check'?'Coche':'Signature');
+  bar.classList.add('show');
+}
+function hideSelBar(){ $('#selbar').classList.remove('show'); }
+
+$('#selMinus').addEventListener('click',()=>resizeSel(-1));
+$('#selPlus').addEventListener('click',()=>resizeSel(1));
+function resizeSel(dir){
+  const a=S.selected; if(!a) return;
+  if(a.type==='sig'){ a.wFrac=Math.max(0.08,Math.min(1,a.wFrac+dir*0.04)); }
+  else { a.sizePt=Math.max(6,Math.min(72, a.sizePt+dir*2)); }
+  layoutAnno(a); vibrate(5);
+}
+$('#selDel').addEventListener('click',()=>{
+  const a=S.selected; if(!a) return;
+  if(a.el) a.el.remove();
+  S.annos=S.annos.filter(x=>x!==a); deselect(); vibrate(15);
+});
+$('#selDone').addEventListener('click',()=>{ if(S.selected&&S.selected.type==='text'){const el=S.selected.el; el.classList.remove('editing'); el.contentEditable='false'; S.selected.text=el.textContent;} deselect(); });
+
+// tap empty area deselects
+viewer.addEventListener('pointerdown',e=>{
+  if(e.target.closest('.anno')||e.target.closest('.selbar')||e.target.closest('.fc')) return;
+  if(S.tool==='text'||S.tool==='check') return; // handled by catcher
+  deselect();
+});
+document.addEventListener('keydown',e=>{
+  if((e.key==='Delete'||e.key==='Backspace') && S.selected && !(S.selected.el&&S.selected.el.classList.contains('editing'))){ $('#selDel').click(); }
+  if(e.key==='Escape') deselect();
+});
+
+/* ---------- tools ---------- */
+function setTool(t){
+  S.tool=t;
+  document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active', b.dataset.tool===t));
+  S.pages.forEach(P=>{
+    P.fieldLayer.style.pointerEvents = (t==='fields')?'auto':'none';
+    P.catcher.style.pointerEvents = (t==='text'||t==='check')?'auto':'none';
+  });
+  if(t==='text') toast('Touchez le document pour écrire');
+  else if(t==='check') toast('Touchez pour poser une coche');
+}
+document.querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.tool;
+  if(t==='sig'){ openSignature(); return; }
+  setTool(t);
+}));
+
+/* ---------- zoom ---------- */
+$('#zIn').addEventListener('click',()=>setZoom(S.zoom+0.2));
+$('#zOut').addEventListener('click',()=>setZoom(S.zoom-0.2));
+function updateZoomLabel(){ $('#zVal').textContent=Math.round(S.zoom*100)+'%'; }
+let zoomT=null;
+async function setZoom(z){
+  z=Math.max(0.5,Math.min(3, Math.round(z*10)/10));
+  if(z===S.zoom) return;
+  S.zoom=z; updateZoomLabel();
+  clearTimeout(zoomT);
+  showLoader('Zoom…');
+  clearTimeout(zoomT);
+  zoomT=setTimeout(async()=>{
+    for(const P of S.pages){
+      const cssScale=(availWidth()*S.zoom)/P.wPt;
+      P.cssScale=cssScale; P.vp=P._page.getViewport({scale:cssScale});
+      P.wrap.style.width=P.vp.width+'px'; P.wrap.style.height=P.vp.height+'px';
+      await renderCanvas(P);
+      buildFieldControls(P);
+    }
+    // reposition annotations
+    S.annos.forEach(a=>layoutAnno(a));
+    hideLoader();
+  },30);
+}
+
+/* ---------- current page tracking ---------- */
+viewer.addEventListener('scroll',()=>{
+  const mid=viewer.scrollTop+viewer.clientHeight/2;
+  let best=0,bd=1e9;
+  S.pages.forEach((P,i)=>{ const c=P.wrap.offsetTop+P.wrap.offsetHeight/2; const d=Math.abs(c-mid); if(d<bd){bd=d;best=i;} });
+  S.curPage=best; $('#pageInd').textContent=(best+1)+' / '+S.numPages;
+},{passive:true});
+
+/* ---------- signature ---------- */
+const sigModal=$('#sigModal'), sigCanvas=$('#sigCanvas');
+let sctx=null, sdraw=false, sbbox=null, slast=null;
+function openSignature(){
+  sigModal.classList.add('show');
+  requestAnimationFrame(()=>{
+    const r=$('#sigPad').getBoundingClientRect();
+    sigCanvas.width=Math.floor(r.width*DPR); sigCanvas.height=Math.floor(r.height*DPR);
+    sctx=sigCanvas.getContext('2d'); sctx.scale(DPR,DPR);
+    sctx.lineWidth=2.6; sctx.lineCap='round'; sctx.lineJoin='round';
+    sctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--text').trim()||'#222';
+    sbbox=null; slast=null;
+  });
+}
+function sigPos(e){ const r=sigCanvas.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+sigCanvas.addEventListener('pointerdown',e=>{ e.preventDefault(); sdraw=true; slast=sigPos(e); mark(slast); sigCanvas.setPointerCapture(e.pointerId); });
+sigCanvas.addEventListener('pointermove',e=>{ if(!sdraw)return; const p=sigPos(e); sctx.beginPath(); sctx.moveTo(slast.x,slast.y); sctx.lineTo(p.x,p.y); sctx.stroke(); slast=p; mark(p); });
+sigCanvas.addEventListener('pointerup',()=>{sdraw=false;});
+sigCanvas.addEventListener('pointercancel',()=>{sdraw=false;});
+function mark(p){ if(!sbbox) sbbox={minx:p.x,miny:p.y,maxx:p.x,maxy:p.y}; else { sbbox.minx=Math.min(sbbox.minx,p.x); sbbox.miny=Math.min(sbbox.miny,p.y); sbbox.maxx=Math.max(sbbox.maxx,p.x); sbbox.maxy=Math.max(sbbox.maxy,p.y);} }
+$('#sigClear').addEventListener('click',()=>{ sctx.clearRect(0,0,sigCanvas.width,sigCanvas.height); sbbox=null; });
+$('#sigCancel').addEventListener('click',()=>{ sigModal.classList.remove('show'); setTool(S.tool==='sig'?'fields':S.tool); });
+$('#sigOk').addEventListener('click',()=>{
+  if(!sbbox){ toast('Signez d\'abord dans le cadre'); return; }
+  const pad=10;
+  let minx=Math.max(0,(sbbox.minx-pad))*DPR, miny=Math.max(0,(sbbox.miny-pad))*DPR;
+  let maxx=Math.min(sigCanvas.width,(sbbox.maxx+pad)*DPR), maxy=Math.min(sigCanvas.height,(sbbox.maxy+pad)*DPR);
+  const w=Math.max(1,maxx-minx), h=Math.max(1,maxy-miny);
+  const crop=document.createElement('canvas'); crop.width=w; crop.height=h;
+  crop.getContext('2d').drawImage(sigCanvas,minx,miny,w,h,0,0,w,h);
+  const dataURL=crop.toDataURL('image/png');
+  sigModal.classList.remove('show');
+  addSignature(dataURL, w/h);
+});
+
+/* ---------- export ---------- */
+const sheet=$('#sheet'), scrim=$('#scrim');
+function openSheet(){ sheet.classList.add('show'); scrim.classList.add('show'); $('#shareBtn').style.display = (navigator.canShare)?'':'none'; }
+function closeSheet(){ sheet.classList.remove('show'); scrim.classList.remove('show'); }
+$('#exportBtn').addEventListener('click',openSheet);
+scrim.addEventListener('click',closeSheet);
+$('#flatSwitch').addEventListener('click',function(){ S.flatten=!S.flatten; this.classList.toggle('on',S.flatten); });
+
+async function buildOutput(){
+  const {PDFDocument,StandardFonts,rgb}=PDFLib;
+  const doc=await PDFDocument.load(S.pdfBytes,{ignoreEncryption:true, updateMetadata:false});
+  const helv=await doc.embedFont(StandardFonts.Helvetica);
+  const pages=doc.getPages();
+
+  // 1) form field values
+  let form=null; try{ form=doc.getForm(); }catch(_){}
+  if(form){
+    for(const name in S.fieldValues){
+      const v=S.fieldValues[name];
+      try{
+        const f=form.getField(name);
+        if(f instanceof PDFLib.PDFTextField){ f.setText(winAnsi(v)); }
+        else if(f instanceof PDFLib.PDFCheckBox){ v?f.check():f.uncheck(); }
+        else if(f instanceof PDFLib.PDFRadioGroup){ if(v) f.select(v); }
+        else if(f instanceof PDFLib.PDFDropdown){ if(v) f.select(v); }
+        else if(f instanceof PDFLib.PDFOptionList){ if(v) f.select(v); }
+      }catch(e){ /* skip incompatible field */ }
+    }
+    try{ form.updateFieldAppearances(helv); }catch(_){ try{form.updateFieldAppearances();}catch(__){} }
+  }
+
+  // 2) annotations
+  for(const a of S.annos){
+    const page=pages[a.page]; if(!page) continue;
+    const {width:Wpt,height:Hpt}=page.getSize();
+    const Xtop=a.fx*Wpt, Ytop=Hpt-(a.fy*Hpt);
+    if(a.type==='text'){
+      const txt=(a.text||'').length?a.text:'';
+      if(!txt.trim()) continue;
+      const size=a.sizePt;
+      const lines=winAnsi(txt).split('\n');
+      lines.forEach((ln,i)=>{
+        const y=Ytop - size*0.80 - i*size*1.18;
+        try{ page.drawText(ln,{x:Xtop,y,size,font:helv,color:rgb(.08,.08,.08)}); }
+        catch(e){ try{ page.drawText(ln.replace(/[^\x20-\x7E]/g,''),{x:Xtop,y,size,font:helv,color:rgb(.08,.08,.08)}); }catch(_){} }
+      });
+    }
+    else if(a.type==='check'){
+      const s=a.sizePt;
+      const col=rgb(.22,.54,.42);
+      const th=Math.max(1.2,s*0.11);
+      const ax=Xtop+0.16*s, ay=Ytop-0.56*s;
+      const bx=Xtop+0.40*s, by=Ytop-0.82*s;
+      const cx=Xtop+0.86*s, cy=Ytop-0.16*s;
+      page.drawLine({start:{x:ax,y:ay},end:{x:bx,y:by},thickness:th,color:col,lineCap:PDFLib.LineCapStyle.Round});
+      page.drawLine({start:{x:bx,y:by},end:{x:cx,y:cy},thickness:th,color:col,lineCap:PDFLib.LineCapStyle.Round});
+    }
+    else if(a.type==='sig'){
+      try{
+        const png=await doc.embedPng(a.dataURL);
+        const w=a.wFrac*Wpt, h=w/a.aspect;
+        page.drawImage(png,{x:Xtop,y:Ytop-h,width:w,height:h});
+      }catch(e){ console.error('sig',e); }
+    }
+  }
+
+  if(S.flatten && form){ try{ form.flatten(); }catch(e){ console.warn('flatten',e); } }
+  return await doc.save({useObjectStreams:false});
+}
+
+function outName(){ return S.fileName.replace(/\.pdf$/i,'')+'-rempli.pdf'; }
+
+$('#dlBtn').addEventListener('click',async()=>{
+  closeSheet(); showLoader('Génération du PDF…');
+  try{
+    const bytes=await buildOutput();
+    const blob=new Blob([bytes],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=outName(); document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    hideLoader(); toast('PDF téléchargé ✓');
+  }catch(e){ console.error(e); hideLoader(); toast('Erreur lors de la génération'); }
+});
+
+$('#shareBtn').addEventListener('click',async()=>{
+  closeSheet(); showLoader('Génération du PDF…');
+  try{
+    const bytes=await buildOutput();
+    const file=new File([bytes],outName(),{type:'application/pdf'});
+    hideLoader();
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:outName()});
+    }else{
+      const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+      const a=document.createElement('a'); a.href=url; a.download=outName(); a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+      toast('Partage indisponible — téléchargé');
+    }
+  }catch(e){ if(e&&e.name==='AbortError'){hideLoader();return;} console.error(e); hideLoader(); toast('Erreur lors du partage'); }
+});
+
+/* ---------- resize handling ---------- */
+let rt=null;
+window.addEventListener('resize',()=>{ if(!S.doc)return; clearTimeout(rt); rt=setTimeout(()=>setZoom(S.zoom===1?1.0001:S.zoom===1.0001?1:S.zoom),200); });
+// simple re-fit on orientation change
+window.addEventListener('orientationchange',()=>{ if(!S.doc)return; setTimeout(()=>{ const z=S.zoom; S.zoom=-1; setZoom(z); },300); });
+
+/* ---------- service worker ---------- */
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('pdf-editor-sw.js').catch(()=>{})); }
+</script>
+</body>
+</html>
