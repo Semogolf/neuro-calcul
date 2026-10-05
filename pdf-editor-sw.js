@@ -1,4 +1,4 @@
-const CACHE = 'champs-pdf-v1';
+const CACHE = 'champs-pdf-v3';
 const ASSETS = [
   'pdf-editor.html',
   'pdf-editor-manifest.json',
@@ -17,26 +17,46 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// cache-first for our assets, network fallback for everything else
+// App code (HTML/JSON/navigations) → network-first so new deploys load immediately.
+// Heavy static libs/fonts/icons → stale-while-revalidate (fast, refreshed in background).
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (res.ok && e.request.url.startsWith(self.location.origin)) {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  const sameOrigin = url.origin === self.location.origin;
+  const isAppShell = req.mode === 'navigate' ||
+    url.pathname.endsWith('/') ||
+    /\.(html|json)$/.test(url.pathname);
+
+  if (isAppShell) {
+    e.respondWith(
+      fetch(req).then(res => {
+        if (res && res.ok && sameOrigin) {
           const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
+          caches.open(CACHE).then(c => c.put(req, clone));
+        }
+        return res;
+      }).catch(() => caches.match(req).then(c => c || caches.match('pdf-editor.html')))
+    );
+    return;
+  }
+
+  e.respondWith(
+    caches.match(req).then(cached => {
+      const network = fetch(req).then(res => {
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(req, clone));
         }
         return res;
       }).catch(() => cached);
+      return cached || network;
     })
   );
 });
