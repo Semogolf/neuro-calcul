@@ -476,32 +476,65 @@ function buildFieldControls(P){
 async function detectText(P){
   let tc;
   try{ tc=await P._page.getTextContent(); }catch(e){ P.textLines=[]; return; }
-  const items=(tc.items||[]).filter(it=>it && typeof it.str==='string');
-  const raw=[]; let cur=null;
-  const flush=()=>{ if(cur && cur.str.trim()){ raw.push(cur); } cur=null; };
-  for(const it of items){
-    const t=it.transform; if(!t){ continue; }
-    const a=t[0],b=t[1],c=t[2],d=t[3],e=t[4],f=t[5];
+  const styles=tc.styles||{};
+  // 1) expand items into tokens, splitting each item on runs of 2+ spaces
+  const toks=[];
+  for(const it of (tc.items||[])){
+    if(!it||typeof it.str!=='string'||!it.transform){ continue; }
+    const t=it.transform, a=t[0],b=t[1],c=t[2],d=t[3],e=t[4],f=t[5];
     const sz=Math.hypot(a,b)||Math.abs(d)||10;
-    // skip rotated / vertical text — not safely editable
-    if(Math.abs(b)>sz*0.35 || Math.abs(c)>sz*0.35){ flush(); if(it.hasEOL)flush(); continue; }
-    const w=it.width||0, right=e+w;
-    if(cur && Math.abs(f-cur.f)<=cur.sz*0.6 && e>=cur.left-cur.sz*0.6 && e<=cur.right+cur.sz*4){
-      const gap=e-cur.right;
-      if(gap>cur.sz*0.25 && !/\s$/.test(cur.str) && !/^\s/.test(it.str)) cur.str+=' ';
-      cur.str+=it.str; cur.right=Math.max(cur.right,right); cur.left=Math.min(cur.left,e); cur.sz=Math.max(cur.sz,sz);
-    }else{
-      flush(); cur={left:e,f,right,sz,str:it.str};
+    if(it.str===''){ if(it.hasEOL) toks.push({eol:true}); continue; }
+    if(Math.abs(b)>sz*0.35 || Math.abs(c)>sz*0.35){ toks.push({eol:true}); continue; } // rotated/vertical
+    const W=it.width||0, s=it.str, total=s.length||1;
+    const re=/\S[\s\S]*?(?=\s{2,}|$)/g;          // chunks separated by 2+ spaces
+    let m;
+    while((m=re.exec(s))){
+      const x=e+(m.index/total)*W, w=(m[0].length/total)*W;
+      toks.push({str:m[0].replace(/\s+$/,''), x, right:x+w, f, sz, fontName:it.fontName});
     }
-    if(it.hasEOL) flush();
+    if(it.hasEOL) toks.push({eol:true});
+  }
+  // 2) group tokens into segments: same baseline + small positional gap
+  const segs=[]; let cur=null;
+  const flush=()=>{ if(cur && cur.str.trim()) segs.push(cur); cur=null; };
+  for(const tk of toks){
+    if(tk.eol){ flush(); continue; }
+    if(cur && Math.abs(tk.f-cur.f)<=cur.sz*0.6 && (tk.x-cur.right)<=cur.sz*0.6){
+      const gap=tk.x-cur.right;
+      if(gap>cur.sz*0.22) cur.str+=' ';
+      cur.str+=tk.str; cur.right=Math.max(cur.right,tk.right); cur.sz=Math.max(cur.sz,tk.sz);
+    }else{
+      flush(); cur={str:tk.str, x:tk.x, right:tk.right, f:tk.f, sz:tk.sz, fontName:tk.fontName};
+    }
   }
   flush();
-  P.textLines=raw.map((l,i)=>({
+  // 3) finalize line objects with resolved font/style info
+  P.textLines=segs.map((l,i)=>({
     id:'t'+P.num+'_'+i, page:P.num-1,
-    xPt:l.left, baselinePt:l.f, widthPt:Math.max(4,l.right-l.left), sizePt:Math.max(5,l.sz),
+    xPt:l.x, baselinePt:l.f, widthPt:Math.max(4,l.right-l.x), sizePt:Math.max(5,l.sz),
     str:l.str.replace(/\s+$/,''), value:l.str.replace(/\s+$/,''),
-    active:false, bg:null, el:null, input:null
+    font:fontInfoFromName(realFontName(P,l.fontName), styles[l.fontName]),
+    active:false, bg:null, ink:null, el:null, input:null
   }));
+}
+
+function realFontName(P,fontName){
+  try{ const o=P._page.commonObjs.get(fontName); if(o&&o.name) return o.name; }catch(_){}
+  return fontName||'';
+}
+function fontInfoFromName(name, style){
+  const hay=((name||'')+' '+((style&&style.fontFamily)||'')).toLowerCase();
+  const bold=/bold|black|heavy|semibold|demibold|\bdemi\b|\bsb\b/.test(hay);
+  const ital=/italic|oblique/.test(hay);
+  const mono=/courier|mono|consol/.test(hay);
+  // "sans-serif" contains "serif", so detect sans explicitly first
+  const sans=/sans|arial|helvetica|verdana|calibri|segoe|roboto|tahoma|liberation|grotesque|noto sans|dejavu sans/.test(hay);
+  const serif=!sans && /times|georgia|\bserif\b|roman|garamond|minion|cambria|book antiqua|palatino|noto serif/.test(hay);
+  const fam = mono?'mono' : serif?'serif' : 'sans';
+  const css = fam==='serif' ? 'Georgia,"Times New Roman",serif'
+            : fam==='mono'  ? '"Courier New",monospace'
+            : 'Arial,Helvetica,sans-serif';
+  return {fam,bold,ital,css};
 }
 
 function lineGeom(P,L){
@@ -529,6 +562,25 @@ function sampleBg(P,g){
   }catch(e){ return [255,255,255]; }
 }
 
+// sample the original text colour: the "ink" pixels within the line box that differ most from the background
+function sampleInk(P,g,bg){
+  try{
+    const ctx=P.canvas.getContext('2d');
+    const k=P.canvas.width/P.vp.width;
+    const x0=Math.max(0,Math.floor(g.left*k)), y0=Math.max(0,Math.floor(g.top*k));
+    const w=Math.min(P.canvas.width-x0,Math.ceil(g.width*k)), h=Math.min(P.canvas.height-y0,Math.ceil(g.height*k));
+    if(w<=0||h<=0) return [20,20,20];
+    const d=ctx.getImageData(x0,y0,w,h).data;
+    const dist=(i)=>Math.abs(d[i]-bg[0])+Math.abs(d[i+1]-bg[1])+Math.abs(d[i+2]-bg[2]);
+    let best=0; for(let i=0;i<d.length;i+=4){ const v=dist(i); if(v>best)best=v; }
+    if(best<60) return [20,20,20];                       // nothing clearly inked
+    const th=Math.max(60,best*0.7);
+    let r=0,gg=0,b=0,n=0;
+    for(let i=0;i<d.length;i+=4){ if(dist(i)>=th){ r+=d[i];gg+=d[i+1];b+=d[i+2];n++; } }
+    return n?[Math.round(r/n),Math.round(gg/n),Math.round(b/n)]:[20,20,20];
+  }catch(e){ return [20,20,20]; }
+}
+
 function buildEditOverlays(P){
   P.editLayer.innerHTML='';
   P.textLines.forEach(L=>{
@@ -544,12 +596,17 @@ function buildEditOverlays(P){
 function mountInput(P,L){
   const g=L._geom||lineGeom(P,L);
   if(!L.bg) L.bg=sampleBg(P,g);
+  if(!L.ink) L.ink=sampleInk(P,g,L.bg);
+  const fi=L.font||{css:'Arial,Helvetica,sans-serif',bold:false,ital:false};
   const multi=L.value.length>60;
   const inp=document.createElement(multi?'textarea':'input');
   if(!multi) inp.type='text';
   inp.className='editinp'+(multi?' ml':'');
   inp.value=L.value;
-  inp.style.cssText=`left:${g.left}px;top:${g.top}px;width:${Math.max(g.width+6,24)}px;height:${g.height}px;font-size:${g.sizePx}px;background:rgb(${L.bg[0]},${L.bg[1]},${L.bg[2]})`;
+  inp.style.cssText=`left:${g.left}px;top:${g.top}px;width:${Math.max(g.width+6,24)}px;height:${g.height}px;`+
+    `font-size:${g.sizePx}px;background:rgb(${L.bg[0]},${L.bg[1]},${L.bg[2]});`+
+    `color:rgb(${L.ink[0]},${L.ink[1]},${L.ink[2]});font-family:${fi.css};`+
+    `font-weight:${fi.bold?'700':'400'};font-style:${fi.ital?'italic':'normal'}`;
   inp.addEventListener('input',()=>{ L.value=inp.value; });
   inp.addEventListener('blur',()=>{ if(L.value===L.str){ deactivateLine(P,L); } });
   L.input=inp; L.active=true;
@@ -780,7 +837,6 @@ async function setZoom(z){
       P.wrap.style.width=P.vp.width+'px'; P.wrap.style.height=P.vp.height+'px';
       await renderCanvas(P);
       buildFieldControls(P);
-      P.textLines.forEach(L=>{ L.bg=null; });   // re-sample at new scale
       buildEditOverlays(P);
     }
     // reposition annotations
@@ -845,6 +901,15 @@ async function buildOutput(){
   const doc=await PDFDocument.load(S.pdfBytes,{ignoreEncryption:true, updateMetadata:false});
   const helv=await doc.embedFont(StandardFonts.Helvetica);
   const pages=doc.getPages();
+  const fontCache={Helvetica:helv};
+  const getStd=async k=>{ if(!fontCache[k]){ try{fontCache[k]=await doc.embedFont(StandardFonts[k]);}catch(_){fontCache[k]=helv;} } return fontCache[k]; };
+  const fontKey=fi=>{
+    if(!fi) return 'Helvetica';
+    const b=fi.bold,i=fi.ital;
+    if(fi.fam==='serif') return b&&i?'TimesRomanBoldItalic':b?'TimesRomanBold':i?'TimesRomanItalic':'TimesRoman';
+    if(fi.fam==='mono')  return b&&i?'CourierBoldOblique':b?'CourierBold':i?'CourierOblique':'Courier';
+    return b&&i?'HelveticaBoldOblique':b?'HelveticaBold':i?'HelveticaOblique':'Helvetica';
+  };
 
   // 1) form field values
   let form=null; try{ form=doc.getForm(); }catch(_){}
@@ -871,6 +936,7 @@ async function buildOutput(){
       if((L.value||'')===L.str) continue;              // unchanged → leave as-is
       const sz=L.sizePt;
       const bg=L.bg||[255,255,255];
+      const ink=L.ink||[20,20,20];
       const pad=sz*0.14;
       page.drawRectangle({
         x:L.xPt-pad, y:L.baselinePt-sz*0.28,
@@ -879,9 +945,11 @@ async function buildOutput(){
       });
       const nv=(L.value||'');
       if(nv.trim()){
+        const font=await getStd(fontKey(L.font));
+        const col=rgb(ink[0]/255,ink[1]/255,ink[2]/255);
         const txt=winAnsi(nv.replace(/\n+/g,' '));
-        try{ page.drawText(txt,{x:L.xPt,y:L.baselinePt,size:sz,font:helv,color:rgb(.08,.08,.08)}); }
-        catch(e){ try{ page.drawText(txt.replace(/[^\x20-\x7E]/g,''),{x:L.xPt,y:L.baselinePt,size:sz,font:helv,color:rgb(.08,.08,.08)}); }catch(_){} }
+        try{ page.drawText(txt,{x:L.xPt,y:L.baselinePt,size:sz,font,color:col}); }
+        catch(e){ try{ page.drawText(txt.replace(/[^\x20-\x7E]/g,''),{x:L.xPt,y:L.baselinePt,size:sz,font,color:col}); }catch(_){} }
       }
     }
   }
