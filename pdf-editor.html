@@ -475,7 +475,10 @@ function buildFieldControls(P){
 /* ---------- detect existing text (make printed text editable) ---------- */
 async function detectText(P){
   let tc;
-  try{ tc=await P._page.getTextContent(); }catch(e){ P.textLines=[]; return; }
+  // disableCombineTextItems: keep label/value in separate items so columns
+  // (e.g. "Prénom et nom      Idriss Lefgoun") become independent fields.
+  try{ tc=await P._page.getTextContent({disableCombineTextItems:true}); }
+  catch(e){ try{ tc=await P._page.getTextContent(); }catch(_){ P.textLines=[]; return; } }
   const styles=tc.styles||{};
   // 1) expand items into tokens, splitting each item on runs of 2+ spaces
   const toks=[];
@@ -499,9 +502,10 @@ async function detectText(P){
   const flush=()=>{ if(cur && cur.str.trim()) segs.push(cur); cur=null; };
   for(const tk of toks){
     if(tk.eol){ flush(); continue; }
-    if(cur && Math.abs(tk.f-cur.f)<=cur.sz*0.6 && (tk.x-cur.right)<=cur.sz*0.6){
+    // merge only near-touching fragments; a gap of "more than one space" starts a new field
+    if(cur && Math.abs(tk.f-cur.f)<=cur.sz*0.6 && (tk.x-cur.right)<=cur.sz*0.45){
       const gap=tk.x-cur.right;
-      if(gap>cur.sz*0.22) cur.str+=' ';
+      if(gap>cur.sz*0.14) cur.str+=' ';
       cur.str+=tk.str; cur.right=Math.max(cur.right,tk.right); cur.sz=Math.max(cur.sz,tk.sz);
     }else{
       flush(); cur={str:tk.str, x:tk.x, right:tk.right, f:tk.f, sz:tk.sz, fontName:tk.fontName};
@@ -1030,8 +1034,25 @@ window.addEventListener('resize',()=>{ if(!S.doc)return; clearTimeout(rt); rt=se
 // simple re-fit on orientation change
 window.addEventListener('orientationchange',()=>{ if(!S.doc)return; setTimeout(()=>{ const z=S.zoom; S.zoom=-1; setZoom(z); },300); });
 
-/* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('pdf-editor-sw.js').catch(()=>{})); }
+/* ---------- service worker (auto-update) ---------- */
+if('serviceWorker' in navigator){
+  const hadController=!!navigator.serviceWorker.controller;
+  let reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(reloaded || !hadController) return;   // only reload on a genuine update, not first install
+    reloaded=true; location.reload();
+  });
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('pdf-editor-sw.js').then(reg=>{
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        if(nw) nw.addEventListener('statechange',()=>{ if(nw.state==='installed' && navigator.serviceWorker.controller){ /* new version ready; controllerchange will reload */ } });
+      });
+      // check for updates on each launch
+      try{ reg.update(); }catch(_){}
+    }).catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
