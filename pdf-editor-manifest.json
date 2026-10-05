@@ -1,0 +1,17 @@
+{
+  "name": "Champs PDF — éditeur de PDF",
+  "short_name": "Champs PDF",
+  "description": "Remplissez les champs de vos PDF, ajoutez du texte, des coches et votre signature, puis exportez — directement sur votre téléphone, 100% hors-ligne.",
+  "start_url": "pdf-editor.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#181F2A",
+  "theme_color": "#B87530",
+  "lang": "fr",
+  "icons": [
+    { "src": "pdf-assets/pdf-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "pdf-assets/pdf-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "pdf-assets/pdf-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
