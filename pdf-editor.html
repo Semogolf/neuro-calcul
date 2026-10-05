@@ -125,6 +125,18 @@ body.loaded .toolbar{display:flex}
 .fc .box.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .fc .box svg{width:78%;height:78%}
 
+/* existing-text edit layer */
+.editlayer{pointer-events:none}
+.hot{position:absolute;display:none;border:1px dashed var(--field-bd);background:var(--field-bg);border-radius:2px;cursor:text}
+.hot::after{content:"";position:absolute;right:2px;top:50%;width:0;height:0}
+.pagewrap.editmode .hot{display:block;pointer-events:auto}
+.pagewrap.editmode .hot:hover{background:var(--accent-subtle);border-color:var(--accent)}
+.hot.active{display:none!important}
+.editinp{position:absolute;border:1px solid transparent;color:#141414;background:#fff;font-family:Helvetica,Arial,sans-serif;padding:0 1px;line-height:1;white-space:pre;overflow:hidden;border-radius:2px;outline:none;pointer-events:none}
+.editinp.ml{white-space:pre-wrap;line-height:1.12}
+.pagewrap.editmode .editinp{pointer-events:auto;border-color:var(--field-bd)}
+.pagewrap.editmode .editinp:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-subtle)}
+
 /* annotations */
 .anno{position:absolute;pointer-events:auto;touch-action:none}
 .anno.text{color:#1a1a1a;white-space:pre-wrap;line-height:1.15;padding:1px 2px;min-width:12px;min-height:1em;outline:none;cursor:move;font-family:Helvetica,Arial,sans-serif}
@@ -210,6 +222,7 @@ body.loaded .toolbar{display:flex}
 
 <div class="toolbar" id="toolbar">
   <button class="tool active" data-tool="fields" id="toolFields"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="5" rx="1.5"/><path d="M7 9.5h2"/><rect x="3" y="15" width="18" height="5" rx="1.5"/><path d="M7 17.5h6"/></svg>Champs</button>
+  <button class="tool" data-tool="edit" id="toolEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11"/><path d="M4 12h7"/><path d="M14.5 19.5l5.5-5.5-2.5-2.5-5.5 5.5-.8 3.3z"/></svg>Modifier</button>
   <button class="tool" data-tool="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>Texte</button>
   <button class="tool" data-tool="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Coche</button>
   <button class="tool" data-tool="sig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19c3-1 4-5 6-5s2 3 4 3 3-6 5-6"/><path d="M3 21h18"/></svg>Signature</button>
@@ -224,7 +237,7 @@ body.loaded .toolbar{display:flex}
   <div class="empty" id="empty">
     <img class="ico" src="pdf-assets/pdf-icon-192.png" alt="">
     <h2>Modifiez vos PDF facilement</h2>
-    <p>Remplissez les champs de formulaire, ajoutez du texte, des coches et votre signature — puis exportez un PDF propre.</p>
+    <p>Remplissez les champs de formulaire, modifiez le texte déjà présent, ajoutez du texte, des coches et votre signature — puis exportez un PDF propre.</p>
     <button class="cta" id="openBtn2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Ouvrir un PDF</button>
     <div class="feat">
       <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg><strong>Champs auto</strong>Détection des formulaires</div>
@@ -338,13 +351,13 @@ async function openFile(file){
     document.body.classList.add('loaded');
     $('#exportBtn').disabled=false; $('#openLbl').textContent='Changer';
     await buildAllPages();
-    setTool('fields');
     updateZoomLabel();
-    // detect fields
-    let nf=0; S.pages.forEach(p=>nf+=p.widgets.length);
+    // detect fields & existing text
+    let nf=0, nt=0; S.pages.forEach(p=>{ nf+=p.widgets.length; nt+=p.textLines.length; });
     hideLoader();
-    if(nf>0) toast(nf+' champ'+(nf>1?'s':'')+' détecté'+(nf>1?'s':'')+' — touchez pour remplir');
-    else { setTool('text'); toast('Aucun champ détecté — ajoutez texte, coche ou signature'); }
+    if(nf>0){ setTool('fields'); toast(nf+' champ'+(nf>1?'s':'')+' détecté'+(nf>1?'s':'')+' — touchez pour remplir'); }
+    else if(nt>0){ setTool('edit'); toast('Touchez un texte existant pour le modifier'); }
+    else { setTool('text'); toast('Aucun texte détecté — ajoutez texte, coche ou signature'); }
   }catch(err){
     console.error(err); hideLoader(); toast('Impossible d\'ouvrir ce PDF');
   }
@@ -365,16 +378,19 @@ async function buildAllPages(){
     wrap.style.width=vp.width+'px'; wrap.style.height=vp.height+'px';
     const canvas=document.createElement('canvas');
     const fieldLayer=document.createElement('div'); fieldLayer.className='layer fieldlayer';
+    const editLayer=document.createElement('div'); editLayer.className='layer editlayer';
     const catcher=document.createElement('div'); catcher.className='layer catcher';
     const annoLayer=document.createElement('div'); annoLayer.className='layer annolayer';
-    wrap.append(canvas,fieldLayer,catcher,annoLayer);
+    wrap.append(canvas,fieldLayer,editLayer,catcher,annoLayer);
     frag.appendChild(wrap);
-    const P={num:i,_page:page,wrap,canvas,fieldLayer,catcher,annoLayer,vp,wPt,hPt,cssScale,widgets:[]};
+    const P={num:i,_page:page,wrap,canvas,fieldLayer,editLayer,catcher,annoLayer,vp,wPt,hPt,cssScale,widgets:[],textLines:[]};
     S.pages.push(P);
     await renderCanvas(P);
     const annots=await page.getAnnotations({intent:'display'});
     P.widgets = annots.filter(a=>a.subtype==='Widget' && a.fieldType && !a.pushButton);
     buildFieldControls(P);
+    await detectText(P);
+    buildEditOverlays(P);
     attachCatcher(P);
   }
   $('#pages').appendChild(frag);
@@ -454,6 +470,102 @@ function buildFieldControls(P){
 
     P.fieldLayer.appendChild(holder);
   });
+}
+
+/* ---------- detect existing text (make printed text editable) ---------- */
+async function detectText(P){
+  let tc;
+  try{ tc=await P._page.getTextContent(); }catch(e){ P.textLines=[]; return; }
+  const items=(tc.items||[]).filter(it=>it && typeof it.str==='string');
+  const raw=[]; let cur=null;
+  const flush=()=>{ if(cur && cur.str.trim()){ raw.push(cur); } cur=null; };
+  for(const it of items){
+    const t=it.transform; if(!t){ continue; }
+    const a=t[0],b=t[1],c=t[2],d=t[3],e=t[4],f=t[5];
+    const sz=Math.hypot(a,b)||Math.abs(d)||10;
+    // skip rotated / vertical text — not safely editable
+    if(Math.abs(b)>sz*0.35 || Math.abs(c)>sz*0.35){ flush(); if(it.hasEOL)flush(); continue; }
+    const w=it.width||0, right=e+w;
+    if(cur && Math.abs(f-cur.f)<=cur.sz*0.6 && e>=cur.left-cur.sz*0.6 && e<=cur.right+cur.sz*4){
+      const gap=e-cur.right;
+      if(gap>cur.sz*0.25 && !/\s$/.test(cur.str) && !/^\s/.test(it.str)) cur.str+=' ';
+      cur.str+=it.str; cur.right=Math.max(cur.right,right); cur.left=Math.min(cur.left,e); cur.sz=Math.max(cur.sz,sz);
+    }else{
+      flush(); cur={left:e,f,right,sz,str:it.str};
+    }
+    if(it.hasEOL) flush();
+  }
+  flush();
+  P.textLines=raw.map((l,i)=>({
+    id:'t'+P.num+'_'+i, page:P.num-1,
+    xPt:l.left, baselinePt:l.f, widthPt:Math.max(4,l.right-l.left), sizePt:Math.max(5,l.sz),
+    str:l.str.replace(/\s+$/,''), value:l.str.replace(/\s+$/,''),
+    active:false, bg:null, el:null, input:null
+  }));
+}
+
+function lineGeom(P,L){
+  const p0=P.vp.convertToViewportPoint(L.xPt, L.baselinePt);   // baseline, y-down
+  const sizePx=L.sizePt*P.cssScale;
+  const left=p0[0], top=p0[1]-sizePx*0.80;
+  const width=Math.max(10,L.widthPt*P.cssScale), height=sizePx*1.12;
+  return {left,top,width,height,sizePx};
+}
+
+function sampleBg(P,g){
+  try{
+    const ctx=P.canvas.getContext('2d');
+    const k=P.canvas.width/P.vp.width;   // backing px per css px
+    const yc=(g.top+g.height/2)*k;
+    const pts=[[(g.left-6)*k,yc],[(g.left+g.width+6)*k,yc],[(g.left+g.width/2)*k,(g.top-5)*k],[(g.left+g.width/2)*k,(g.top+g.height+5)*k],[(g.left-6)*k,(g.top-5)*k]];
+    const cols=[];
+    for(const [x,y] of pts){
+      if(x<1||y<1||x>=P.canvas.width-1||y>=P.canvas.height-1) continue;
+      const dp=ctx.getImageData(Math.floor(x),Math.floor(y),1,1).data; cols.push([dp[0],dp[1],dp[2]]);
+    }
+    if(!cols.length) return [255,255,255];
+    const med=ch=>{const arr=cols.map(c=>c[ch]).sort((p,q)=>p-q);return arr[Math.floor(arr.length/2)];};
+    return [med(0),med(1),med(2)];
+  }catch(e){ return [255,255,255]; }
+}
+
+function buildEditOverlays(P){
+  P.editLayer.innerHTML='';
+  P.textLines.forEach(L=>{
+    const g=lineGeom(P,L); L._geom=g;
+    const hot=document.createElement('div'); hot.className='hot'+(L.active?' active':'');
+    hot.style.cssText=`left:${g.left}px;top:${g.top}px;width:${g.width}px;height:${g.height}px`;
+    hot.addEventListener('pointerdown',ev=>{ if(S.tool!=='edit')return; ev.preventDefault(); activateLine(P,L); });
+    L.el=hot; P.editLayer.appendChild(hot);
+    if(L.active) mountInput(P,L);
+  });
+}
+
+function mountInput(P,L){
+  const g=L._geom||lineGeom(P,L);
+  if(!L.bg) L.bg=sampleBg(P,g);
+  const multi=L.value.length>60;
+  const inp=document.createElement(multi?'textarea':'input');
+  if(!multi) inp.type='text';
+  inp.className='editinp'+(multi?' ml':'');
+  inp.value=L.value;
+  inp.style.cssText=`left:${g.left}px;top:${g.top}px;width:${Math.max(g.width+6,24)}px;height:${g.height}px;font-size:${g.sizePx}px;background:rgb(${L.bg[0]},${L.bg[1]},${L.bg[2]})`;
+  inp.addEventListener('input',()=>{ L.value=inp.value; });
+  inp.addEventListener('blur',()=>{ if(L.value===L.str){ deactivateLine(P,L); } });
+  L.input=inp; L.active=true;
+  if(L.el) L.el.classList.add('active');
+  P.editLayer.appendChild(inp);
+}
+
+function activateLine(P,L){
+  if(L.active){ if(L.input) L.input.focus(); return; }
+  mountInput(P,L); vibrate();
+  if(L.input) L.input.focus();
+}
+function deactivateLine(P,L){
+  L.active=false; L.value=L.str;
+  if(L.input){ L.input.remove(); L.input=null; }
+  if(L.el) L.el.classList.remove('active');
 }
 
 /* ---------- tap to create annotations ---------- */
@@ -634,9 +746,14 @@ function setTool(t){
   S.pages.forEach(P=>{
     P.fieldLayer.style.pointerEvents = (t==='fields')?'auto':'none';
     P.catcher.style.pointerEvents = (t==='text'||t==='check')?'auto':'none';
+    P.wrap.classList.toggle('editmode', t==='edit');
   });
   if(t==='text') toast('Touchez le document pour écrire');
   else if(t==='check') toast('Touchez pour poser une coche');
+  else if(t==='edit'){
+    let n=0; S.pages.forEach(P=>n+=P.textLines.length);
+    toast(n?('Touchez un texte à modifier'):('Aucun texte détecté (PDF scanné ?)'));
+  }
 }
 document.querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.tool;
@@ -663,6 +780,8 @@ async function setZoom(z){
       P.wrap.style.width=P.vp.width+'px'; P.wrap.style.height=P.vp.height+'px';
       await renderCanvas(P);
       buildFieldControls(P);
+      P.textLines.forEach(L=>{ L.bg=null; });   // re-sample at new scale
+      buildEditOverlays(P);
     }
     // reposition annotations
     S.annos.forEach(a=>layoutAnno(a));
@@ -744,7 +863,30 @@ async function buildOutput(){
     try{ form.updateFieldAppearances(helv); }catch(_){ try{form.updateFieldAppearances();}catch(__){} }
   }
 
-  // 2) annotations
+  // 2) edited existing-text lines: cover original, redraw new text on same baseline
+  for(const P of S.pages){
+    const page=pages[P.num-1]; if(!page) continue;
+    for(const L of P.textLines){
+      if(!L.active) continue;
+      if((L.value||'')===L.str) continue;              // unchanged → leave as-is
+      const sz=L.sizePt;
+      const bg=L.bg||[255,255,255];
+      const pad=sz*0.14;
+      page.drawRectangle({
+        x:L.xPt-pad, y:L.baselinePt-sz*0.28,
+        width:L.widthPt+pad*2+sz*0.35, height:sz*1.22,
+        color:rgb(bg[0]/255,bg[1]/255,bg[2]/255)
+      });
+      const nv=(L.value||'');
+      if(nv.trim()){
+        const txt=winAnsi(nv.replace(/\n+/g,' '));
+        try{ page.drawText(txt,{x:L.xPt,y:L.baselinePt,size:sz,font:helv,color:rgb(.08,.08,.08)}); }
+        catch(e){ try{ page.drawText(txt.replace(/[^\x20-\x7E]/g,''),{x:L.xPt,y:L.baselinePt,size:sz,font:helv,color:rgb(.08,.08,.08)}); }catch(_){} }
+      }
+    }
+  }
+
+  // 3) annotations
   for(const a of S.annos){
     const page=pages[a.page]; if(!page) continue;
     const {width:Wpt,height:Hpt}=page.getSize();
